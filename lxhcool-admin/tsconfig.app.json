@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "src/main.tsx",
+    "src/routeTree.gen.ts",
+    "src/routes/**/*.ts",
+    "src/routes/**/*.tsx",
+    "src/features/auth/**/*.ts",
+    "src/features/auth/**/*.tsx",
+    "src/features/content-admin/**/*.ts",
+    "src/features/content-admin/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "src/context/**/*.ts",
+    "src/context/**/*.tsx",
+    "src/hooks/**/*.ts",
+    "src/hooks/**/*.tsx",
+    "src/lib/**/*.ts",
+    "src/stores/**/*.ts",
+    "src/styles/**/*.css",
+    "src/assets/**/*.ts",
+    "src/assets/**/*.tsx",
+    "src/vite-env.d.ts"
+  ],
+  "exclude": [
+    "src/routes/clerk/**",
+    "src/routes/_authenticated/tasks/**",
+    "src/routes/_authenticated/users/**",
+    "src/features/tasks/**",
+    "src/features/users/**",
+    "src/test-utils/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

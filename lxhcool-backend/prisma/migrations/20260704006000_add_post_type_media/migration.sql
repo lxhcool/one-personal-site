@@ -1,0 +1,7 @@
+CREATE TYPE "PostType" AS ENUM ('ARTICLE', 'MUSIC', 'VIDEO');
+
+ALTER TABLE "Post"
+ADD COLUMN "type" "PostType" NOT NULL DEFAULT 'ARTICLE',
+ADD COLUMN "media" JSONB NOT NULL DEFAULT '{}';
+
+CREATE INDEX "Post_type_idx" ON "Post"("type");

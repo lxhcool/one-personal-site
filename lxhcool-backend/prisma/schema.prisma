@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+enum PostType {
+  ARTICLE
+  MOMENT
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum VerificationPurpose {
+  REGISTER
+}
+
+enum CategoryType {
+  POST
+  FRIEND_LINK
+}
+
+enum WidgetArea {
+  LEFT
+  RIGHT
+}
+
+enum WidgetType {
+  MUSIC_PLAYER
+  HITOKOTO
+  FRIEND_LINKS
+  PROFILE
+  DATE_CARD
+  PHOTO_GALLERY
+}
+
+model EmailVerificationCode {
+  id         String              @id @default(cuid())
+  email      String
+  codeHash   String
+  purpose    VerificationPurpose @default(REGISTER)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int                 @default(0)
+  createdAt  DateTime            @default(now())
+
+  @@index([email, purpose, createdAt])
+}
+
+model Post {
+  id             String        @id @default(cuid())
+  type           PostType      @default(ARTICLE)
+  title          String
+  slug           String        @unique
+  category       String?
+  excerpt        String?
+  content        String
+  media          Json          @default("{}")
+  coverImage     String?
+  status         PublishStatus @default(DRAFT)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  ogImage        String?
+  tags           String[]      @default([])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([type])
+  @@index([category])
+  @@index([slug])
+}
+
+model ContentCategory {
+  id        String       @id @default(cuid())
+  type      CategoryType
+  name      String
+  logo      String?
+  backgroundImage String?
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([type, name])
+  @@index([type, sortOrder])
+}
+
+model SiteWidget {
+  id        String     @id @default(cuid())
+  area      WidgetArea
+  type      WidgetType
+  title     String?
+  enabled   Boolean    @default(true)
+  sortOrder Int        @default(0)
+  config    Json       @default("{}")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([type])
+  @@index([enabled, area, sortOrder])
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  title          String
+  slug           String        @unique
+  excerpt        String?
+  content        String?
+  coverImage     String?
+  gallery        String[]      @default([])
+  techStack      String[]      @default([])
+  liveUrl        String?
+  githubUrl      String?
+  featured       Boolean       @default(false)
+  sortOrder      Int           @default(0)
+  status         PublishStatus @default(DRAFT)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  ogImage        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, featured, sortOrder])
+  @@index([slug])
+}
+
+model FriendLink {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  category    String?
+  logo        String?
+  description String?
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isVisible, sortOrder])
+  @@index([category, isVisible])
+}
