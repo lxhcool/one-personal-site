@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -39,7 +40,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageShell } from './components/page-shell'
-import { musicApi, widgetsApi } from './api'
+import { musicApi, uploadsApi, widgetsApi } from './api'
 import type { SiteWidget, WidgetArea, WidgetType } from './types'
 
 const widgetTypes: {
@@ -51,43 +52,51 @@ const widgetTypes: {
 }[] = [
   {
     value: 'MUSIC_PLAYER',
-    label: 'Music Player',
-    description: 'Use a NetEase playlist as the homepage widget playlist.',
+    label: '音乐播放器',
+    description: '使用网易云歌单作为首页小工具播放列表。',
     template: { playlist: [], playlistSource: null },
     icon: Music2,
   },
   {
     value: 'HITOKOTO',
-    label: 'Quote Card',
-    description: 'Show a short quote or sentence.',
-    template: { text: '', from: '' },
+    label: '一言',
+    description: '从一言接口获取句子，可选分类过滤和背景图。',
+    template: { text: '', from: '', categories: [], backgroundImage: '' },
     icon: Quote,
   },
   {
     value: 'FRIEND_LINKS',
-    label: 'Friend Links',
-    description: 'Show visible friend links from a category.',
+    label: '友情链接',
+    description: '展示指定分类下可见的友情链接。',
     template: { category: '', limit: 6, random: false },
     icon: Link2,
   },
   {
     value: 'PROFILE',
-    label: 'Profile',
-    description: 'Show avatar, bio, and social links.',
-    template: { avatar: '', name: '', bio: '', socials: [] },
+    label: '个人信息',
+    description: '展示封面、头像、昵称、身份和社交链接。',
+    template: {
+      coverImage: '',
+      avatar: '',
+      name: '',
+      role: '',
+      bio: '',
+      socials: [],
+      stats: [],
+    },
     icon: UserRound,
   },
   {
     value: 'DATE_CARD',
-    label: 'Date Card',
-    description: 'Show date, time, and site running days.',
+    label: '日期卡片',
+    description: '展示日期、时间和站点运行信息。',
     template: { showTime: true, siteStartDate: '' },
     icon: CalendarDays,
   },
   {
     value: 'PHOTO_GALLERY',
-    label: 'Photo Gallery',
-    description: 'Show a group of images.',
+    label: '照片墙',
+    description: '展示一组图片。',
     template: { images: [] },
     icon: Image,
   },
@@ -110,6 +119,178 @@ type PlaylistSource = {
   cover?: string
   trackCount?: number
 }
+
+type SocialPlatformKey =
+  | 'github'
+  | 'gitee'
+  | 'douyin'
+  | 'xiaohongshu'
+  | 'bilibili'
+  | 'netease-cloud-music'
+  | 'zhihu'
+  | 'juejin'
+  | 'csdn'
+  | 'weibo'
+  | 'telegram'
+  | 'discord'
+  | 'instagram'
+  | 'youtube'
+  | 'x'
+  | 'wechat'
+  | 'qq'
+  | 'custom'
+
+type SocialConfig = {
+  platform: SocialPlatformKey
+  label: string
+  url: string
+  icon: string
+  color: string
+  qrCode: string
+  enabled: boolean
+}
+
+const socialPlatforms: Array<{
+  key: SocialPlatformKey
+  label: string
+  icon: string
+  color: string
+  placeholder: string
+  qrCode?: boolean
+}> = [
+  {
+    key: 'github',
+    label: 'GitHub',
+    icon: 'github',
+    color: '#181717',
+    placeholder: 'https://github.com/username',
+  },
+  {
+    key: 'gitee',
+    label: 'Gitee',
+    icon: 'gitee',
+    color: '#C71D23',
+    placeholder: 'https://gitee.com/username',
+  },
+  {
+    key: 'douyin',
+    label: '抖音',
+    icon: 'tiktok',
+    color: '#000000',
+    placeholder: 'https://www.douyin.com/user/...',
+    qrCode: true,
+  },
+  {
+    key: 'xiaohongshu',
+    label: '小红书',
+    icon: 'xiaohongshu',
+    color: '#FF2442',
+    placeholder: 'https://www.xiaohongshu.com/user/profile/...',
+    qrCode: true,
+  },
+  {
+    key: 'bilibili',
+    label: '哔哩哔哩',
+    icon: 'bilibili',
+    color: '#00A1D6',
+    placeholder: 'https://space.bilibili.com/...',
+  },
+  {
+    key: 'netease-cloud-music',
+    label: '网易云音乐',
+    icon: 'neteasecloudmusic',
+    color: '#D43C33',
+    placeholder: 'https://music.163.com/#/user/home?id=...',
+  },
+  {
+    key: 'zhihu',
+    label: '知乎',
+    icon: 'zhihu',
+    color: '#0084FF',
+    placeholder: 'https://www.zhihu.com/people/...',
+  },
+  {
+    key: 'juejin',
+    label: '掘金',
+    icon: 'juejin',
+    color: '#1E80FF',
+    placeholder: 'https://juejin.cn/user/...',
+  },
+  {
+    key: 'csdn',
+    label: 'CSDN',
+    icon: 'csdn',
+    color: '#FC5531',
+    placeholder: 'https://blog.csdn.net/...',
+  },
+  {
+    key: 'weibo',
+    label: '微博',
+    icon: 'sinaweibo',
+    color: '#E6162D',
+    placeholder: 'https://weibo.com/...',
+    qrCode: true,
+  },
+  {
+    key: 'telegram',
+    label: 'Telegram',
+    icon: 'telegram',
+    color: '#26A5E4',
+    placeholder: 'https://t.me/username',
+  },
+  {
+    key: 'discord',
+    label: 'Discord',
+    icon: 'discord',
+    color: '#5865F2',
+    placeholder: 'https://discord.gg/...',
+  },
+  {
+    key: 'instagram',
+    label: 'Instagram',
+    icon: 'instagram',
+    color: '#E4405F',
+    placeholder: 'https://www.instagram.com/username',
+  },
+  {
+    key: 'youtube',
+    label: 'YouTube',
+    icon: 'youtube',
+    color: '#FF0000',
+    placeholder: 'https://www.youtube.com/@username',
+  },
+  {
+    key: 'x',
+    label: 'X',
+    icon: 'x',
+    color: '#000000',
+    placeholder: 'https://x.com/username',
+  },
+  {
+    key: 'wechat',
+    label: '微信',
+    icon: 'wechat',
+    color: '#07C160',
+    placeholder: '微信主页链接或留空',
+    qrCode: true,
+  },
+  {
+    key: 'qq',
+    label: 'QQ',
+    icon: 'tencentqq',
+    color: '#1EBAFC',
+    placeholder: 'QQ 主页链接或留空',
+    qrCode: true,
+  },
+  {
+    key: 'custom',
+    label: '自定义',
+    icon: '',
+    color: '#111827',
+    placeholder: 'https://example.com',
+    qrCode: true,
+  },
+]
 
 export function WidgetsPage() {
   const queryClient = useQueryClient()
@@ -239,8 +420,8 @@ export function WidgetsPage() {
 
   return (
     <PageShell
-      title='Widgets'
-      description='Drag widgets to the left or right frontend column, then reorder them.'
+      title='小工具'
+      description='拖拽组件到前台左侧或右侧栏，也可以继续拖拽调整顺序。'
     >
       <DndContext
         sensors={sensors}
@@ -254,7 +435,7 @@ export function WidgetsPage() {
           <div className='grid gap-4 lg:grid-cols-2'>
             <WidgetAreaColumn
               area='LEFT'
-              title='Left Widgets'
+              title='左侧小工具'
               widgets={leftWidgets}
               removingId={removeWidget.variables}
               updatingId={updateWidget.isPending ? updateWidget.variables?.id : undefined}
@@ -264,7 +445,7 @@ export function WidgetsPage() {
             />
             <WidgetAreaColumn
               area='RIGHT'
-              title='Right Widgets'
+              title='右侧小工具'
               widgets={rightWidgets}
               removingId={removeWidget.variables}
               updatingId={updateWidget.isPending ? updateWidget.variables?.id : undefined}
@@ -294,8 +475,8 @@ function WidgetPalette({
   return (
     <Card className='h-fit'>
       <CardHeader>
-        <CardTitle>Component Library</CardTitle>
-        <CardDescription>Drag a component into a column to create it.</CardDescription>
+        <CardTitle>组件库</CardTitle>
+        <CardDescription>拖拽组件到栏目中即可创建。</CardDescription>
       </CardHeader>
       <CardContent className='grid gap-3'>
         {widgetTypes.map((item) => (
@@ -359,7 +540,7 @@ function PalettePreview({
           <div className='font-medium'>{item.label}</div>
           {used ? (
             <Badge variant='secondary' className='shrink-0'>
-              Added
+              已添加
             </Badge>
           ) : null}
         </div>
@@ -407,7 +588,7 @@ function WidgetAreaColumn({
         <div className='flex items-center justify-between gap-3'>
           <div>
             <CardTitle>{title}</CardTitle>
-            <CardDescription>Drag cards to reorder or move them to another side.</CardDescription>
+            <CardDescription>拖拽卡片可排序，也可以移动到另一侧。</CardDescription>
           </div>
           <Badge variant='secondary'>{widgets.length}</Badge>
         </div>
@@ -432,7 +613,7 @@ function WidgetAreaColumn({
                     : 'text-muted-foreground'
                 }`}
               >
-                Drop here
+                拖到这里
               </div>
             ) : null}
             {widgets.map((widget) => (
@@ -502,7 +683,7 @@ function SortableWidgetCard({
         <div className='min-w-0 flex-1'>
           <div className='truncate font-medium'>{widget.title || typeLabels[widget.type]}</div>
           <div className='mt-1 text-xs text-muted-foreground'>
-            {typeLabels[widget.type]} / {widget.enabled ? 'Enabled' : 'Disabled'}
+            {typeLabels[widget.type]} / {widget.enabled ? '已启用' : '已停用'}
           </div>
         </div>
         <Button
@@ -513,11 +694,17 @@ function SortableWidgetCard({
           onClick={onRemove}
         >
           <Trash2 />
-          <span className='sr-only'>Delete</span>
+          <span className='sr-only'>删除</span>
         </Button>
       </div>
       {widget.type === 'MUSIC_PLAYER' ? (
         <MusicPlaylistEditor widget={widget} updating={updating} onUpdate={onUpdate} />
+      ) : null}
+      {widget.type === 'HITOKOTO' ? (
+        <HitokotoEditor widget={widget} updating={updating} onUpdate={onUpdate} />
+      ) : null}
+      {widget.type === 'PROFILE' ? (
+        <ProfileEditor widget={widget} updating={updating} onUpdate={onUpdate} />
       ) : null}
     </div>
   )
@@ -531,7 +718,7 @@ function WidgetCardPreview({ widget }: { widget: SiteWidget }) {
         <div className='min-w-0 flex-1'>
           <div className='truncate font-medium'>{widget.title || typeLabels[widget.type]}</div>
           <div className='mt-1 text-xs text-muted-foreground'>
-            {typeLabels[widget.type]} / {widget.enabled ? 'Enabled' : 'Disabled'}
+            {typeLabels[widget.type]} / {widget.enabled ? '已启用' : '已停用'}
           </div>
         </div>
       </div>
@@ -558,7 +745,7 @@ function MusicPlaylistEditor({
     const url = neteaseUrl.trim()
     if (!url) return
     if (!isNeteasePlaylistUrl(url)) {
-      window.alert('Please enter a NetEase playlist URL.')
+      window.alert('请输入网易云歌单链接。')
       return
     }
 
@@ -574,7 +761,7 @@ function MusicPlaylistEditor({
         trackCount: playlistData.trackCount || playlistData.tracks.length,
       })
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to load playlist.')
+      window.alert(error instanceof Error ? error.message : '歌单加载失败。')
     } finally {
       setFetching(false)
     }
@@ -593,7 +780,7 @@ function MusicPlaylistEditor({
   return (
     <div className='mt-4 grid gap-3 border-t pt-4'>
       <div className='grid gap-2'>
-        <Label htmlFor={`netease-${widget.id}`}>NetEase playlist URL</Label>
+        <Label htmlFor={`netease-${widget.id}`}>网易云歌单链接</Label>
         <div className='flex gap-2'>
           <Input
             id={`netease-${widget.id}`}
@@ -607,24 +794,311 @@ function MusicPlaylistEditor({
             disabled={fetching}
             onClick={validateNeteasePlaylist}
           >
-            {fetching ? 'Loading' : 'Validate'}
+            {fetching ? '加载中' : '校验'}
           </Button>
         </div>
       </div>
 
       {playlistSource ? (
         <div className='rounded-md border bg-muted/30 p-3 text-sm'>
-          <div className='font-medium'>{playlistSource.title || 'NetEase playlist'}</div>
+          <div className='font-medium'>{playlistSource.title || '网易云歌单'}</div>
           <div className='mt-1 text-xs text-muted-foreground'>
             {playlistSource.trackCount
-              ? `${playlistSource.trackCount} tracks`
-              : 'Playlist source configured'}
+              ? `${playlistSource.trackCount} 首歌曲`
+              : '已配置歌单来源'}
           </div>
         </div>
       ) : null}
 
       <Button type='button' disabled={updating} onClick={savePlaylist}>
-        {updating ? 'Saving' : 'Save playlist'}
+        {updating ? '保存中' : '保存歌单'}
+      </Button>
+    </div>
+  )
+}
+
+function HitokotoEditor({
+  widget,
+  updating,
+  onUpdate,
+}: {
+  widget: SiteWidget
+  updating: boolean
+  onUpdate: (payload: Record<string, unknown>) => void
+}) {
+  const [backgroundImage, setBackgroundImage] = useState(() =>
+    readConfigString(widget.config, 'backgroundImage')
+  )
+  const [uploading, setUploading] = useState(false)
+
+  async function uploadBackground(file: File | undefined) {
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const result = await uploadsApi.image(file)
+      setBackgroundImage(result.url)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '图片上传失败。')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function saveHitokoto() {
+    onUpdate({
+      config: {
+        ...widget.config,
+        backgroundImage: backgroundImage.trim(),
+      },
+    })
+  }
+
+  return (
+    <div className='mt-4 grid gap-3 border-t pt-4'>
+      <div className='grid gap-2'>
+        <Label htmlFor={`hitokoto-bg-${widget.id}`}>背景图</Label>
+        <Input
+          id={`hitokoto-bg-${widget.id}`}
+          type='file'
+          accept='image/jpeg,image/png,image/webp,image/gif'
+          disabled={uploading}
+          onChange={(event) => void uploadBackground(event.currentTarget.files?.[0])}
+        />
+      </div>
+
+      {backgroundImage ? (
+        <div className='overflow-hidden rounded-md border bg-muted/30'>
+          <img
+            src={backgroundImage}
+            alt=''
+            className='h-32 w-full object-cover'
+          />
+          <div className='truncate px-3 py-2 text-xs text-muted-foreground'>
+            {backgroundImage}
+          </div>
+        </div>
+      ) : null}
+
+      <Button type='button' disabled={updating || uploading} onClick={saveHitokoto}>
+        {updating ? '保存中' : uploading ? '上传中' : '保存背景图'}
+      </Button>
+    </div>
+  )
+}
+
+function ProfileEditor({
+  widget,
+  updating,
+  onUpdate,
+}: {
+  widget: SiteWidget
+  updating: boolean
+  onUpdate: (payload: Record<string, unknown>) => void
+}) {
+  const [coverImage, setCoverImage] = useState(() =>
+    readConfigString(widget.config, 'coverImage')
+  )
+  const [avatar, setAvatar] = useState(() => readConfigString(widget.config, 'avatar'))
+  const [name, setName] = useState(() => readConfigString(widget.config, 'name'))
+  const [role, setRole] = useState(() => readConfigString(widget.config, 'role'))
+  const [socials, setSocials] = useState<SocialConfig[]>(() =>
+    normalizeSocials(widget.config.socials)
+  )
+  const [uploading, setUploading] = useState<string | null>(null)
+
+  async function uploadProfileImage(
+    kind: 'cover' | 'avatar' | `social-${SocialPlatformKey}`,
+    file: File | undefined
+  ) {
+    if (!file) return
+
+    setUploading(kind)
+    try {
+      const result = await uploadsApi.image(file)
+      if (kind === 'cover') {
+        setCoverImage(result.url)
+      } else if (kind === 'avatar') {
+        setAvatar(result.url)
+      } else {
+        const platform = kind.replace('social-', '') as SocialPlatformKey
+        updateSocial(platform, { qrCode: result.url, enabled: true })
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '图片上传失败。')
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  function updateSocial(platform: SocialPlatformKey, patch: Partial<SocialConfig>) {
+    setSocials((items) =>
+      items.map((item) => (item.platform === platform ? { ...item, ...patch } : item))
+    )
+  }
+
+  function saveProfile() {
+    onUpdate({
+      config: {
+        ...widget.config,
+        coverImage: coverImage.trim(),
+        avatar: avatar.trim(),
+        name: name.trim(),
+        role: role.trim(),
+        socials: serializeSocials(socials),
+        stats: [],
+      },
+    })
+  }
+
+  return (
+    <div className='mt-4 grid gap-3 border-t pt-4'>
+      <div className='grid gap-2'>
+        <Label htmlFor={`profile-name-${widget.id}`}>昵称</Label>
+        <Input
+          id={`profile-name-${widget.id}`}
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+          placeholder='Jayvion Simon'
+        />
+      </div>
+
+      <div className='grid gap-2'>
+        <Label htmlFor={`profile-role-${widget.id}`}>身份</Label>
+        <Input
+          id={`profile-role-${widget.id}`}
+          value={role}
+          onChange={(event) => setRole(event.currentTarget.value)}
+          placeholder='CEO'
+        />
+      </div>
+
+      <div className='grid gap-2'>
+        <Label htmlFor={`profile-cover-${widget.id}`}>封面图</Label>
+        <Input
+          id={`profile-cover-${widget.id}`}
+          type='file'
+          accept='image/jpeg,image/png,image/webp,image/gif'
+          disabled={uploading === 'cover'}
+          onChange={(event) => void uploadProfileImage('cover', event.currentTarget.files?.[0])}
+        />
+      </div>
+
+      {coverImage ? (
+        <img src={coverImage} alt='' className='h-24 w-full rounded-md object-cover' />
+      ) : null}
+
+      <div className='grid gap-2'>
+        <Label htmlFor={`profile-avatar-${widget.id}`}>头像</Label>
+        <Input
+          id={`profile-avatar-${widget.id}`}
+          type='file'
+          accept='image/jpeg,image/png,image/webp,image/gif'
+          disabled={uploading === 'avatar'}
+          onChange={(event) => void uploadProfileImage('avatar', event.currentTarget.files?.[0])}
+        />
+      </div>
+
+      {avatar ? (
+        <img src={avatar} alt='' className='size-20 rounded-full object-cover' />
+      ) : null}
+
+      <div className='grid gap-3'>
+        <Label>社交信息</Label>
+        {socials.map((social) => {
+          const platform = socialPlatforms.find((item) => item.key === social.platform)
+          const label = platform?.label ?? social.label
+          return (
+            <div
+              key={social.platform}
+              className='grid gap-3 rounded-md border bg-muted/20 p-3'
+            >
+              <div className='flex items-center gap-2'>
+                <Checkbox
+                  id={`profile-social-enabled-${widget.id}-${social.platform}`}
+                  checked={social.enabled}
+                  onCheckedChange={(checked) =>
+                    updateSocial(social.platform, { enabled: checked === true })
+                  }
+                />
+                <Label
+                  htmlFor={`profile-social-enabled-${widget.id}-${social.platform}`}
+                  className='font-medium'
+                >
+                  {label}
+                </Label>
+              </div>
+              {social.platform === 'custom' ? (
+                <Input
+                  value={social.label}
+                  onChange={(event) =>
+                    updateSocial(social.platform, { label: event.currentTarget.value })
+                  }
+                  placeholder='自定义平台名称'
+                />
+              ) : null}
+              <Input
+                value={social.url}
+                onChange={(event) =>
+                  updateSocial(social.platform, {
+                    url: event.currentTarget.value,
+                    enabled: social.enabled || Boolean(event.currentTarget.value.trim()),
+                  })
+                }
+                placeholder={platform?.placeholder ?? 'https://example.com'}
+              />
+              <div className='grid gap-2'>
+                <Label htmlFor={`profile-social-color-${widget.id}-${social.platform}`}>
+                  图标颜色
+                </Label>
+                <div className='flex gap-2'>
+                  <Input
+                    id={`profile-social-color-${widget.id}-${social.platform}`}
+                    type='color'
+                    value={social.color}
+                    onChange={(event) =>
+                      updateSocial(social.platform, { color: event.currentTarget.value })
+                    }
+                    className='h-10 w-14 p-1'
+                  />
+                  <Input
+                    value={social.color}
+                    onChange={(event) =>
+                      updateSocial(social.platform, { color: event.currentTarget.value })
+                    }
+                    placeholder='#111827'
+                  />
+                </div>
+              </div>
+              {platform?.qrCode ? (
+                <div className='grid gap-2'>
+                  <Input
+                    type='file'
+                    accept='image/jpeg,image/png,image/webp,image/gif'
+                    disabled={uploading === `social-${social.platform}`}
+                    onChange={(event) =>
+                      void uploadProfileImage(
+                        `social-${social.platform}`,
+                        event.currentTarget.files?.[0]
+                      )
+                    }
+                  />
+                  {social.qrCode ? (
+                    <img
+                      src={social.qrCode}
+                      alt=''
+                      className='size-20 rounded-md border object-cover'
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+
+      <Button type='button' disabled={updating || uploading !== null} onClick={saveProfile}>
+        {updating ? '保存中' : uploading ? '上传中' : '保存个人信息'}
       </Button>
     </div>
   )
@@ -652,6 +1126,53 @@ function readPlaylistSource(config: Record<string, unknown>) {
 function readConfigString(source: Record<string, unknown>, key: string) {
   const value = source[key]
   return typeof value === 'string' ? value : ''
+}
+
+function normalizeSocials(value: unknown): SocialConfig[] {
+  const configured = Array.isArray(value)
+    ? value.filter(
+        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object'
+      )
+    : []
+
+  return socialPlatforms.map((platform) => {
+    const item = configured.find(
+      (social) =>
+        readConfigString(social, 'platform') === platform.key ||
+        readConfigString(social, 'icon') === platform.icon
+    )
+    const url = item ? readConfigString(item, 'url') : ''
+    const qrCode = item ? readConfigString(item, 'qrCode') : ''
+    const label = item ? readConfigString(item, 'label') || platform.label : platform.label
+    const color = item ? readConfigString(item, 'color') || platform.color : platform.color
+    return {
+      platform: platform.key,
+      label,
+      url,
+      icon: platform.icon || (item ? readConfigString(item, 'icon') : ''),
+      color,
+      qrCode,
+      enabled: Boolean(item && (url || qrCode)),
+    }
+  })
+}
+
+function serializeSocials(value: SocialConfig[]) {
+  return value
+    .filter((item) => item.enabled && (item.url.trim() || item.qrCode.trim()))
+    .map((item) => ({
+      platform: item.platform,
+      label: item.label.trim(),
+      url: item.url.trim(),
+      icon: item.icon.trim(),
+      color: normalizeHexColor(item.color) || '#111827',
+      qrCode: item.qrCode.trim(),
+    }))
+}
+
+function normalizeHexColor(value: string) {
+  const text = value.trim()
+  return /^#[0-9a-fA-F]{6}$/.test(text) ? text : ''
 }
 
 function isNeteasePlaylistUrl(url: string) {

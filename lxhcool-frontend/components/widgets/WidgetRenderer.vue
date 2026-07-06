@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ListMusic, Pause, Play, SkipBack, SkipForward, X } from '@lucide/vue';
+import { ListMusic, Pause, Play, RefreshCw, SkipBack, SkipForward, X } from '@lucide/vue';
 import { listPublicFriendLinks } from '~/entities/friend-link/api/friendLinkApi';
 import type { SiteWidget } from '~/entities/widget/model/types';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
@@ -22,6 +22,45 @@ const durationLabel = ref('0:00');
 const simulatedCurrentTime = ref(0);
 let progressTimer: ReturnType<typeof setInterval> | undefined;
 
+type HitokotoSentence = {
+  hitokoto: string;
+  from?: string | null;
+  from_who?: string | null;
+};
+
+type ProfileSocial = {
+  platform: string;
+  label: string;
+  url: string;
+  icon?: string;
+  color?: string;
+  qrCode?: string;
+};
+
+const socialDefaultColors: Record<string, string> = {
+  github: '181717',
+  gitee: 'C71D23',
+  douyin: '000000',
+  tiktok: '000000',
+  xiaohongshu: 'FF2442',
+  bilibili: '00A1D6',
+  'netease-cloud-music': 'D43C33',
+  neteasecloudmusic: 'D43C33',
+  zhihu: '0084FF',
+  juejin: '1E80FF',
+  csdn: 'FC5531',
+  weibo: 'E6162D',
+  sinaweibo: 'E6162D',
+  telegram: '26A5E4',
+  discord: '5865F2',
+  instagram: 'E4405F',
+  youtube: 'FF0000',
+  x: '000000',
+  wechat: '07C160',
+  qq: '1EBAFC',
+  tencentqq: '1EBAFC',
+};
+
 const config = computed(() => props.widget.config ?? {});
 
 const normalized = computed(() => {
@@ -36,8 +75,11 @@ const normalized = computed(() => {
       };
     case 'HITOKOTO':
       return {
-        text: readString(config.value, 'text', '愿你有前进一步的勇气。'),
+        text: readString(config.value, 'text', '\u613f\u4f60\u6709\u524d\u8fdb\u4e00\u6b65\u7684\u52c7\u6c14\u3002'),
         from: readString(config.value, 'from'),
+        backgroundImage: resolveAssetUrl(readString(config.value, 'backgroundImage')),
+        category: readString(config.value, 'category'),
+        categories: readArray<string>(config.value, 'categories'),
       };
     case 'FRIEND_LINKS':
       return {
@@ -47,10 +89,13 @@ const normalized = computed(() => {
       };
     case 'PROFILE':
       return {
-        avatar: readString(config.value, 'avatar'),
+        coverImage: resolveAssetUrl(readString(config.value, 'coverImage')),
+        avatar: resolveAssetUrl(readString(config.value, 'avatar')),
         name: readString(config.value, 'name'),
+        role: readString(config.value, 'role'),
         bio: readString(config.value, 'bio'),
-        socials: readArray<{ platform: string; label: string; url: string }>(config.value, 'socials'),
+        socials: readArray<ProfileSocial>(config.value, 'socials'),
+        stats: readArray<{ label: string; value: string }>(config.value, 'stats'),
       };
     case 'DATE_CARD':
       return {
@@ -65,6 +110,79 @@ const normalized = computed(() => {
       return {};
   }
 });
+
+const hitokotoCategories = computed(() => {
+  if (props.widget.type !== 'HITOKOTO') return [];
+  const hitokotoConfig = normalized.value as {
+    category?: string;
+    categories?: string[];
+  };
+  const categories = [
+    hitokotoConfig.category,
+    ...(Array.isArray(hitokotoConfig.categories) ? hitokotoConfig.categories : []),
+  ];
+  return [...new Set(categories.filter((item): item is string => Boolean(item)))];
+});
+
+const hitokotoQuery = computed(() =>
+  hitokotoCategories.value.length > 0 ? { c: hitokotoCategories.value } : undefined,
+);
+
+const { data: remoteHitokoto, pending: isHitokotoPending, refresh: refreshHitokoto } = useAsyncData(
+  `widget-hitokoto-${props.widget.id}`,
+  () =>
+    props.widget.type === 'HITOKOTO'
+      ? $fetch<HitokotoSentence>('https://v1.hitokoto.cn/', {
+          query: hitokotoQuery.value,
+          timeout: 5000,
+        }).catch(() => null)
+      : Promise.resolve(null),
+  { server: false, watch: [hitokotoQuery] },
+);
+
+const hitokotoText = computed(() => {
+  if (props.widget.type !== 'HITOKOTO') return '';
+  const fallback = normalized.value as { text?: string };
+  return remoteHitokoto.value?.hitokoto || fallback.text || '\u613f\u4f60\u6709\u524d\u8fdb\u4e00\u6b65\u7684\u52c7\u6c14\u3002';
+});
+
+const hitokotoSource = computed(() => {
+  if (props.widget.type !== 'HITOKOTO') return '';
+  const fallback = normalized.value as { from?: string };
+  const parts = [remoteHitokoto.value?.from_who, remoteHitokoto.value?.from]
+    .filter((item): item is string => Boolean(item))
+    .filter((item, index, source) => source.indexOf(item) === index);
+  return parts.join(' / ') || fallback.from || '';
+});
+
+function handleRefreshHitokoto() {
+  void refreshHitokoto();
+}
+
+function getSocialIconUrl(social: ProfileSocial) {
+  const icon = social.icon?.trim();
+  if (!icon || icon.startsWith('http')) return icon || '';
+  const simpleIcon = icon === 'douyin' ? 'tiktok' : icon;
+  const color =
+    normalizeIconColor(social.color) ||
+    getSocialDefaultColor(social.platform) ||
+    getSocialDefaultColor(simpleIcon) ||
+    '111827';
+  return `https://cdn.simpleicons.org/${encodeURIComponent(simpleIcon)}/${color}`;
+}
+
+function getSocialLabel(social: ProfileSocial) {
+  return social.label || social.platform || '社交链接';
+}
+
+function normalizeIconColor(value?: string) {
+  const text = value?.trim().replace(/^#/, '') ?? '';
+  return /^[0-9a-fA-F]{6}$/.test(text) ? text : '';
+}
+
+function getSocialDefaultColor(value?: string) {
+  return value ? socialDefaultColors[value.trim().toLowerCase()] || '' : '';
+}
 
 const playlistSource = computed(() => {
   if (props.widget.type !== 'MUSIC_PLAYER') return null;
@@ -459,11 +577,29 @@ const timeText = computed(() =>
         </Transition>
       </div>
     </template>
-
     <template v-else-if="widget.type === 'HITOKOTO'">
-      <div class="widget-heading">{{ widget.title || '一言' }}</div>
-      <p>{{ normalized.text }}</p>
-      <span v-if="normalized.from" class="muted">- {{ normalized.from }}</span>
+      <div class="hitokoto-card">
+        <div class="hitokoto-media" :style="{ backgroundImage: normalized.backgroundImage ? `url(${normalized.backgroundImage})` : '' }">
+          <button
+            type="button"
+            class="hitokoto-refresh"
+            :class="{ loading: isHitokotoPending }"
+            aria-label="Refresh hitokoto"
+            :disabled="isHitokotoPending"
+            @click="handleRefreshHitokoto"
+          >
+            <RefreshCw :size="14" stroke-width="1.8" />
+          </button>
+        </div>
+        <div class="hitokoto-body">
+          <Transition name="hitokoto-text" mode="out-in">
+            <strong :key="hitokotoText">{{ hitokotoText }}</strong>
+          </Transition>
+          <Transition name="hitokoto-source" mode="out-in">
+            <span v-if="hitokotoSource" :key="hitokotoSource" class="muted">{{ hitokotoSource }}</span>
+          </Transition>
+        </div>
+      </div>
     </template>
 
     <template v-else-if="widget.type === 'FRIEND_LINKS'">
@@ -476,20 +612,54 @@ const timeText = computed(() =>
         </a>
       </div>
     </template>
-
     <template v-else-if="widget.type === 'PROFILE'">
-      <img
-        v-if="normalized.avatar"
-        class="profile-avatar"
-        :src="normalized.avatar as string"
-        :alt="(normalized.name as string) || ''"
-      />
-      <div class="widget-heading">{{ widget.title || normalized.name || '个人信息' }}</div>
-      <p v-if="normalized.bio">{{ normalized.bio }}</p>
-      <div v-if="Array.isArray(normalized.socials) && normalized.socials.length" class="socials">
-        <a v-for="social in normalized.socials" :key="social.url" :href="social.url" target="_blank">
-          {{ social.label || social.platform }}
-        </a>
+      <div class="profile-card">
+        <div class="profile-cover">
+          <img v-if="normalized.coverImage" :src="normalized.coverImage as string" alt="" />
+          <div class="profile-cover-overlay"></div>
+          <svg
+            class="profile-cover-mask"
+            focusable="false"
+            aria-hidden="true"
+            viewBox="0 0 144 62"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m111.34 23.88c-10.62-10.46-18.5-23.88-38.74-23.88h-1.2c-20.24 0-28.12 13.42-38.74 23.88-7.72 9.64-19.44 11.74-32.66 12.12v26h144v-26c-13.22-.38-24.94-2.48-32.66-12.12z"
+              fill="currentColor"
+              fill-rule="evenodd"
+            />
+          </svg>
+          <img
+            v-if="normalized.avatar"
+            class="profile-avatar"
+            :src="normalized.avatar as string"
+            :alt="(normalized.name as string) || ''"
+          />
+          <div v-else class="profile-avatar profile-avatar-fallback">
+            {{ ((normalized.name as string) || 'U').slice(0, 1) }}
+          </div>
+        </div>
+        <div class="profile-main">
+          <strong>{{ normalized.name || widget.title || 'Profile' }}</strong>
+          <p v-if="normalized.role || normalized.bio">{{ normalized.role || normalized.bio }}</p>
+          <div v-if="Array.isArray(normalized.socials) && normalized.socials.length" class="profile-socials">
+            <component
+              v-for="social in normalized.socials"
+              :key="social.platform || social.url || social.qrCode"
+              :is="social.url ? 'a' : 'span'"
+              :href="social.url || undefined"
+              :target="social.url ? '_blank' : undefined"
+              :rel="social.url ? 'noreferrer' : undefined"
+              :aria-label="getSocialLabel(social)"
+              :title="getSocialLabel(social)"
+            >
+              <img v-if="getSocialIconUrl(social)" :src="getSocialIconUrl(social)" :alt="getSocialLabel(social)" />
+              <span v-else>{{ getSocialLabel(social).slice(0, 2) }}</span>
+            </component>
+          </div>
+        </div>
       </div>
     </template>
 
@@ -543,6 +713,263 @@ p {
   font-size: 13px;
 }
 
+.hitokoto-card {
+  overflow: hidden;
+  margin: -16px;
+  border-radius: inherit;
+  background: #fff;
+}
+
+.hitokoto-media {
+  position: relative;
+  min-height: 168px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  background:
+    linear-gradient(135deg, #d8d8d8, #eeeeee);
+  background-position: center;
+  background-size: cover;
+}
+
+.hitokoto-refresh {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #303138;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.1);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.hitokoto-refresh:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.hitokoto-refresh:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.hitokoto-refresh.loading svg {
+  animation: hitokoto-refresh-spin 0.8s linear infinite;
+}
+
+.hitokoto-body {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 10px;
+  min-height: 126px;
+  padding: 18px 20px 20px;
+}
+
+.hitokoto-body strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.hitokoto-body .muted {
+  justify-self: end;
+  align-self: end;
+  margin-top: 0;
+  text-align: right;
+}
+
+.hitokoto-text-enter-active,
+.hitokoto-text-leave-active,
+.hitokoto-source-enter-active,
+.hitokoto-source-leave-active {
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
+}
+
+.hitokoto-text-enter-from,
+.hitokoto-source-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.hitokoto-text-leave-to,
+.hitokoto-source-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.profile-card {
+  overflow: hidden;
+  margin: -16px;
+  border-radius: inherit;
+  background: #fff;
+  color: #0f172a;
+}
+
+.profile-cover {
+  position: relative;
+  height: 158px;
+  overflow: visible;
+  background:
+    linear-gradient(135deg, #0f172a, #737373);
+}
+
+.profile-cover img:not(.profile-avatar) {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.profile-cover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: inherit;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  aspect-ratio: inherit;
+  background-color: rgba(var(--palette-common-blackChannel, 0 0 0) / 48%);
+  pointer-events: none;
+}
+
+.profile-cover-mask {
+  user-select: none;
+  display: inline-block;
+  flex-shrink: 0;
+  fill: currentcolor;
+  font-size: 1.5rem;
+  position: absolute;
+  right: 0;
+  bottom: -26px;
+  left: 0;
+  z-index: 10;
+  width: 144px;
+  height: 62px;
+  margin-right: auto;
+  margin-left: auto;
+  color: var(--palette-background-paper, #fff);
+  transition: fill 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-main {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 48px 18px 24px;
+  text-align: center;
+}
+
+.profile-avatar {
+  position: absolute;
+  right: 0;
+  bottom: -32px;
+  left: 0;
+  z-index: 11;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-right: auto;
+  margin-left: auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  background: #eef2f7;
+  color: #334155;
+  font-family:
+    'Public Sans Variable',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol';
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1;
+  object-fit: cover;
+  user-select: none;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  container-type: inline-size;
+}
+
+.profile-avatar-fallback {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.profile-main strong {
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.profile-main p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.profile-socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  min-height: 28px;
+  margin-top: 8px;
+}
+
+.profile-socials a,
+.profile-socials > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.profile-socials a:hover {
+  background: #eef2f7;
+  transform: translateY(-1px);
+}
+
+.profile-socials img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
 .link-list {
   display: grid;
   gap: 8px;
@@ -570,29 +997,6 @@ p {
   border-radius: 999px;
   background: var(--hover-bg);
   object-fit: cover;
-  font-size: 12px;
-}
-
-.profile-avatar {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 12px;
-  border-radius: 999px;
-  object-fit: cover;
-}
-
-.socials {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.socials a {
-  border-radius: 999px;
-  background: var(--hover-bg);
-  padding: 5px 9px;
   font-size: 12px;
 }
 
@@ -928,6 +1332,15 @@ figcaption {
 }
 
 @keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hitokoto-refresh-spin {
   from {
     transform: rotate(0deg);
   }
