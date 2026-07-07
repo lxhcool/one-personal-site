@@ -109,7 +109,7 @@ function resolveVideoEmbedUrl(url?: string | null) {
 
         <section
           v-if="musicAudioUrl || musicEmbedUrl || musicExternalUrl"
-          class="post-media"
+          class="post-media u-shadow-card"
         >
           <div class="media-heading">
             <strong>{{ readMediaString(music, 'title') || '音乐' }}</strong>
@@ -131,7 +131,7 @@ function resolveVideoEmbedUrl(url?: string | null) {
 
         <section
           v-if="videoUrl || videoEmbedUrl || videoExternalUrl"
-          class="post-media"
+          class="post-media u-shadow-card"
         >
           <div class="media-heading">
             <strong>{{ readMediaString(video, 'title') || '视频' }}</strong>
@@ -189,7 +189,7 @@ function resolveVideoEmbedUrl(url?: string | null) {
 .moment-photos img {
   aspect-ratio: 1 / 1;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius);
   object-fit: cover;
 }
 
@@ -198,9 +198,8 @@ function resolveVideoEmbedUrl(url?: string | null) {
   gap: 12px;
   margin: 20px 0;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--card-bg, #fff);
-  box-shadow: var(--card-shadow, 0px 8px 24px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0px rgba(0, 0, 0, 0.02));
 }
 
 .media-heading {
@@ -222,7 +221,7 @@ function resolveVideoEmbedUrl(url?: string | null) {
 .post-media video,
 .post-media iframe {
   aspect-ratio: 16 / 9;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #000;
 }
 </style>

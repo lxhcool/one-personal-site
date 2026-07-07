@@ -95,7 +95,7 @@ function resolveAssetUrl(url?: string | null) {
 
     <button
       type="button"
-      class="play-button"
+      class="play-button u-shadow-control"
       :aria-label="isPlaying ? '暂停音乐' : '播放音乐'"
       @click="togglePlay"
     >
@@ -130,7 +130,7 @@ function resolveAssetUrl(url?: string | null) {
   align-items: center;
   max-width: 360px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #f7f8fa;
 }
 
@@ -140,7 +140,7 @@ function resolveAssetUrl(url?: string | null) {
   height: 58px;
   place-items: center;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #e8edf5;
   color: #5570a7;
   font-weight: 700;
@@ -176,10 +176,9 @@ function resolveAssetUrl(url?: string | null) {
   height: 34px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: #5570a7;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   font-size: 13px;
   line-height: 1;

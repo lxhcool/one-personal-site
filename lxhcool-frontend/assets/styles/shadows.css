@@ -1,0 +1,111 @@
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+:root {
+  --tw-inset-shadow: 0 0 #0000;
+  --tw-inset-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --shadow-value: var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+
+  --shadow-none-value: 0 0 #0000;
+  --shadow-card-value: 0px 8px 24px 0px rgba(0, 0, 0, 0.04),
+    0px 4px 4px 0px rgba(0, 0, 0, 0.02);
+  --shadow-control-value: 0 6px 16px rgba(0, 0, 0, 0.08);
+  --shadow-avatar-value: 0 8px 18px rgba(15, 23, 42, 0.08);
+  --shadow-profile-avatar-value: 0 4px 12px rgba(15, 23, 42, 0.16);
+  --shadow-panel-value: 0 10px 28px rgba(17, 24, 39, 0.08),
+    0 2px 8px rgba(17, 24, 39, 0.04);
+  --shadow-toggle-value: 0 6px 14px rgba(17, 24, 39, 0.1);
+  --shadow-cover-value: 0 8px 18px rgba(17, 24, 39, 0.12);
+  --shadow-primary-control-value: 0 8px 18px rgba(17, 24, 39, 0.1),
+    inset 0 0 0 1px rgba(17, 24, 39, 0.06);
+  --shadow-inset-overlay-value: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+
+  --card-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--shadow-card-value);
+}
+
+:root[data-theme='dark'] {
+  --shadow-card-value: 0px 8px 24px 0px rgba(0, 0, 0, 0.24),
+    0px 4px 4px 0px rgba(0, 0, 0, 0.16);
+}
+
+.u-shadow-none {
+  --tw-shadow: var(--shadow-none-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-card {
+  --tw-shadow: var(--shadow-card-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-control {
+  --tw-shadow: var(--shadow-control-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-avatar {
+  --tw-shadow: var(--shadow-avatar-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-profile-avatar {
+  --tw-shadow: var(--shadow-profile-avatar-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-panel {
+  --tw-shadow: var(--shadow-panel-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-toggle {
+  --tw-shadow: var(--shadow-toggle-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-cover {
+  --tw-shadow: var(--shadow-cover-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-primary-control {
+  --tw-shadow: var(--shadow-primary-control-value);
+  box-shadow: var(--shadow-value);
+}
+
+.u-shadow-inset-overlay {
+  --tw-shadow: var(--shadow-inset-overlay-value);
+  box-shadow: var(--shadow-value);
+}

@@ -92,12 +92,12 @@ function formatDate(value?: string | null) {
       <img class="moments-cover" src="/images/moments-cover.jpg" alt="" />
       <div class="moments-owner">
         <strong>lxhcoool</strong>
-        <img src="/images/profile-avatar.jpg" alt="" />
+        <img class="u-shadow-profile-avatar" src="/images/profile-avatar.jpg" alt="" />
       </div>
     </section>
 
     <section class="moment-feed">
-      <article v-if="home.posts.length === 0" class="empty-card">
+      <article v-if="home.posts.length === 0" class="empty-card u-shadow-card">
         还没有动态
       </article>
 
@@ -170,7 +170,7 @@ function formatDate(value?: string | null) {
       </article>
     </section>
 
-    <section v-if="home.projects.length > 0" class="project-strip">
+    <section v-if="home.projects.length > 0" class="project-strip u-shadow-card">
       <h2>Featured Projects</h2>
       <ul>
         <li v-for="project in home.projects" :key="project.id">
@@ -193,7 +193,7 @@ function formatDate(value?: string | null) {
   height: 310px;
   min-height: 310px;
   max-height: 310px;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: #eef1f5;
   flex-shrink: 0;
 }
@@ -240,10 +240,9 @@ function formatDate(value?: string | null) {
   height: 76px;
   opacity: 1;
   border: 3px solid #fff;
-  border-radius: 8px;
+  border-radius: 50%;
   background: #fff;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
 }
 
 .moment-feed {
@@ -253,9 +252,8 @@ function formatDate(value?: string | null) {
 }
 
 .empty-card {
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--card-bg, #fff);
-  box-shadow: var(--card-shadow, 0px 8px 24px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0px rgba(0, 0, 0, 0.02));
 }
 
 .empty-card {
@@ -275,7 +273,7 @@ function formatDate(value?: string | null) {
 .feed-avatar {
   width: 42px;
   height: 42px;
-  border-radius: 6px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
@@ -316,7 +314,7 @@ function formatDate(value?: string | null) {
 .photo-grid img {
   aspect-ratio: 1 / 1;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius);
   object-fit: cover;
 }
 
@@ -337,7 +335,7 @@ function formatDate(value?: string | null) {
 .video-card iframe {
   aspect-ratio: 16 / 9;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #000;
 }
 
@@ -361,7 +359,7 @@ function formatDate(value?: string | null) {
   align-items: center;
   gap: 4px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: #f5f6f8;
   color: #576b95;
   cursor: pointer;
@@ -376,9 +374,8 @@ function formatDate(value?: string | null) {
 
 .project-strip {
   padding: 18px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--card-bg, #fff);
-  box-shadow: var(--card-shadow, 0px 8px 24px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0px rgba(0, 0, 0, 0.02));
 }
 
 @media (max-width: 680px) {
@@ -387,7 +384,7 @@ function formatDate(value?: string | null) {
     height: 260px;
     min-height: 260px;
     max-height: 260px;
-    border-radius: 10px 10px 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
   }
 
   .moments-owner {

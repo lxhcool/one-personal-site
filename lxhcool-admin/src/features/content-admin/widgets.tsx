@@ -61,7 +61,7 @@ const widgetTypes: {
     value: 'HITOKOTO',
     label: '一言',
     description: '从一言接口获取句子，可选分类过滤和背景图。',
-    template: { text: '', from: '', categories: [], backgroundImage: '' },
+    template: { text: '', from: '', categories: [] },
     icon: Quote,
   },
   {
@@ -701,7 +701,7 @@ function SortableWidgetCard({
         <MusicPlaylistEditor widget={widget} updating={updating} onUpdate={onUpdate} />
       ) : null}
       {widget.type === 'HITOKOTO' ? (
-        <HitokotoEditor widget={widget} updating={updating} onUpdate={onUpdate} />
+        <HitokotoCompactEditor widget={widget} updating={updating} onUpdate={onUpdate} />
       ) : null}
       {widget.type === 'PROFILE' ? (
         <ProfileEditor widget={widget} updating={updating} onUpdate={onUpdate} />
@@ -817,6 +817,38 @@ function MusicPlaylistEditor({
   )
 }
 
+function HitokotoCompactEditor({
+  widget,
+  updating,
+  onUpdate,
+}: {
+  widget: SiteWidget
+  updating: boolean
+  onUpdate: (payload: Record<string, unknown>) => void
+}) {
+  const hasLegacyBackground = Boolean(readConfigString(widget.config, 'backgroundImage'))
+
+  function clearHitokotoBackground() {
+    const nextConfig = { ...widget.config }
+    delete nextConfig.backgroundImage
+    onUpdate({ config: nextConfig })
+  }
+
+  return (
+    <div className='mt-4 grid gap-3 border-t pt-4'>
+      <div className='rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground'>
+        一言卡片不再使用背景图。
+      </div>
+
+      {hasLegacyBackground ? (
+        <Button type='button' variant='outline' disabled={updating} onClick={clearHitokotoBackground}>
+          {updating ? '保存中' : '清除旧背景图配置'}
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
 function HitokotoEditor({
   widget,
   updating,
@@ -887,6 +919,8 @@ function HitokotoEditor({
   )
 }
 
+void HitokotoEditor
+
 function ProfileEditor({
   widget,
   updating,
@@ -904,6 +938,9 @@ function ProfileEditor({
   const [role, setRole] = useState(() => readConfigString(widget.config, 'role'))
   const [socials, setSocials] = useState<SocialConfig[]>(() =>
     normalizeSocials(widget.config.socials)
+  )
+  const [selectedSocial, setSelectedSocial] = useState<SocialPlatformKey>(() =>
+    normalizeSocials(widget.config.socials).find((item) => item.enabled)?.platform ?? 'github'
   )
   const [uploading, setUploading] = useState<string | null>(null)
 
@@ -950,6 +987,11 @@ function ProfileEditor({
       },
     })
   }
+
+  const activeSocial = socials.find((item) => item.platform === selectedSocial) ?? socials[0]
+  const activePlatform = activeSocial
+    ? socialPlatforms.find((item) => item.key === activeSocial.platform)
+    : undefined
 
   return (
     <div className='mt-4 grid gap-3 border-t pt-4'>
@@ -1003,7 +1045,108 @@ function ProfileEditor({
         <img src={avatar} alt='' className='size-20 rounded-full object-cover' />
       ) : null}
 
-      <div className='grid gap-3'>
+      {activeSocial ? (
+        <div className='grid gap-3 rounded-md border bg-muted/20 p-3'>
+          <Label>社交信息</Label>
+          <div className='flex flex-wrap gap-2'>
+            {socials.map((social) => {
+              const platform = socialPlatforms.find((item) => item.key === social.platform)
+              const label = platform?.label ?? social.label
+              const active = social.platform === activeSocial.platform
+              return (
+                <Button
+                  key={social.platform}
+                  type='button'
+                  variant={active ? 'default' : social.enabled ? 'secondary' : 'outline'}
+                  size='sm'
+                  onClick={() => setSelectedSocial(social.platform)}
+                >
+                  {label}
+                </Button>
+              )
+            })}
+          </div>
+
+          <div className='grid gap-3 rounded-md border bg-background p-3'>
+            <div className='flex items-center gap-2'>
+              <Checkbox
+                id={`profile-social-compact-enabled-${widget.id}-${activeSocial.platform}`}
+                checked={activeSocial.enabled}
+                onCheckedChange={(checked) =>
+                  updateSocial(activeSocial.platform, { enabled: checked === true })
+                }
+              />
+              <Label htmlFor={`profile-social-compact-enabled-${widget.id}-${activeSocial.platform}`}>
+                启用 {activePlatform?.label ?? activeSocial.label}
+              </Label>
+            </div>
+
+            {activeSocial.platform === 'custom' ? (
+              <Input
+                value={activeSocial.label}
+                onChange={(event) =>
+                  updateSocial(activeSocial.platform, { label: event.currentTarget.value })
+                }
+                placeholder='自定义平台名称'
+              />
+            ) : null}
+
+            <Input
+              value={activeSocial.url}
+              onChange={(event) =>
+                updateSocial(activeSocial.platform, {
+                  url: event.currentTarget.value,
+                  enabled: activeSocial.enabled || Boolean(event.currentTarget.value.trim()),
+                })
+              }
+              placeholder={activePlatform?.placeholder ?? 'https://example.com'}
+            />
+
+            <div className='flex gap-2'>
+              <Input
+                type='color'
+                value={activeSocial.color}
+                onChange={(event) =>
+                  updateSocial(activeSocial.platform, { color: event.currentTarget.value })
+                }
+                className='h-10 w-14 p-1'
+              />
+              <Input
+                value={activeSocial.color}
+                onChange={(event) =>
+                  updateSocial(activeSocial.platform, { color: event.currentTarget.value })
+                }
+                placeholder='#111827'
+              />
+            </div>
+
+            {activePlatform?.qrCode ? (
+              <div className='grid gap-2'>
+                <Input
+                  type='file'
+                  accept='image/jpeg,image/png,image/webp,image/gif'
+                  disabled={uploading === `social-${activeSocial.platform}`}
+                  onChange={(event) =>
+                    void uploadProfileImage(
+                      `social-${activeSocial.platform}`,
+                      event.currentTarget.files?.[0]
+                    )
+                  }
+                />
+                {activeSocial.qrCode ? (
+                  <img
+                    src={activeSocial.qrCode}
+                    alt=''
+                    className='size-20 rounded-md border object-cover'
+                  />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div className='hidden'>
         <Label>社交信息</Label>
         {socials.map((social) => {
           const platform = socialPlatforms.find((item) => item.key === social.platform)

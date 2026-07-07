@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-07-04',
-  css: ['~/app/assets/styles/reset.css', '~/app/assets/styles/theme.css'],
+  css: ['~/assets/styles/reset.css', '~/assets/styles/shadows.css', '~/assets/styles/theme.css'],
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,

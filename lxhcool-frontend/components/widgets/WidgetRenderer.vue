@@ -77,7 +77,6 @@ const normalized = computed(() => {
       return {
         text: readString(config.value, 'text', '\u613f\u4f60\u6709\u524d\u8fdb\u4e00\u6b65\u7684\u52c7\u6c14\u3002'),
         from: readString(config.value, 'from'),
-        backgroundImage: resolveAssetUrl(readString(config.value, 'backgroundImage')),
         category: readString(config.value, 'category'),
         categories: readArray<string>(config.value, 'categories'),
       };
@@ -468,12 +467,18 @@ const timeText = computed(() =>
 </script>
 
 <template>
-  <section class="app-card widget-card" :class="{ 'music-widget-card': widget.type === 'MUSIC_PLAYER' }">
+  <section
+    class="app-card widget-card"
+    :class="[
+      { 'music-widget-card': widget.type === 'MUSIC_PLAYER' },
+      widget.type === 'MUSIC_PLAYER' ? 'u-shadow-none' : '',
+    ]"
+  >
     <template v-if="widget.type === 'MUSIC_PLAYER'">
-      <div class="music-panel">
+      <div class="music-panel u-shadow-panel">
         <button
           type="button"
-          class="playlist-toggle"
+          class="playlist-toggle u-shadow-toggle"
           aria-label="Open playlist"
           @click="isPlaylistOpen = true"
         >
@@ -487,7 +492,7 @@ const timeText = computed(() =>
             src="/images/music-disc-glow.png"
             alt=""
           />
-          <div class="music-cover-large">
+          <div class="music-cover-large u-shadow-cover">
             <img v-if="displayCover" :src="displayCover" alt="" />
             <span v-else>Music</span>
           </div>
@@ -514,7 +519,7 @@ const timeText = computed(() =>
           </button>
           <button
             type="button"
-            class="main-control"
+            class="main-control u-shadow-primary-control"
             :aria-label="isPlaying ? 'Pause' : 'Play'"
             @click="toggleMusic"
           >
@@ -545,7 +550,7 @@ const timeText = computed(() =>
         />
 
         <Transition name="playlist-panel">
-          <div v-if="isPlaylistOpen" class="playlist-overlay">
+          <div v-if="isPlaylistOpen" class="playlist-overlay u-shadow-inset-overlay">
             <div class="playlist-head">
               <strong>播放列表</strong>
               <button type="button" aria-label="Close playlist" @click="isPlaylistOpen = false">
@@ -579,7 +584,7 @@ const timeText = computed(() =>
     </template>
     <template v-else-if="widget.type === 'HITOKOTO'">
       <div class="hitokoto-card">
-        <div class="hitokoto-media" :style="{ backgroundImage: normalized.backgroundImage ? `url(${normalized.backgroundImage})` : '' }">
+        <div class="hitokoto-body">
           <button
             type="button"
             class="hitokoto-refresh"
@@ -590,8 +595,6 @@ const timeText = computed(() =>
           >
             <RefreshCw :size="14" stroke-width="1.8" />
           </button>
-        </div>
-        <div class="hitokoto-body">
           <Transition name="hitokoto-text" mode="out-in">
             <strong :key="hitokotoText">{{ hitokotoText }}</strong>
           </Transition>
@@ -633,11 +636,11 @@ const timeText = computed(() =>
           </svg>
           <img
             v-if="normalized.avatar"
-            class="profile-avatar"
+            class="profile-avatar u-shadow-avatar"
             :src="normalized.avatar as string"
             :alt="(normalized.name as string) || ''"
           />
-          <div v-else class="profile-avatar profile-avatar-fallback">
+          <div v-else class="profile-avatar profile-avatar-fallback u-shadow-avatar">
             {{ ((normalized.name as string) || 'U').slice(0, 1) }}
           </div>
         </div>
@@ -691,7 +694,6 @@ const timeText = computed(() =>
   overflow: visible;
   border: 0;
   background: transparent;
-  box-shadow: none;
 }
 
 .widget-heading {
@@ -720,37 +722,26 @@ p {
   background: #fff;
 }
 
-.hitokoto-media {
-  position: relative;
-  min-height: 168px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-  background:
-    linear-gradient(135deg, #d8d8d8, #eeeeee);
-  background-position: center;
-  background-size: cover;
-}
-
 .hitokoto-refresh {
   position: absolute;
-  top: 18px;
-  right: 18px;
+  top: 14px;
+  right: 14px;
   display: grid;
   width: 32px;
   height: 32px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
+  border-radius: var(--radius);
+  background: #f5f6f8;
   color: #303138;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.1);
   transition:
     background-color 0.2s ease,
     transform 0.2s ease;
 }
 
 .hitokoto-refresh:hover:not(:disabled) {
-  background: #fff;
+  background: #eef1f6;
   transform: translateY(-1px);
 }
 
@@ -764,6 +755,7 @@ p {
 }
 
 .hitokoto-body {
+  position: relative;
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 10px;
@@ -772,6 +764,7 @@ p {
 }
 
 .hitokoto-body strong {
+  padding-right: 38px;
   color: var(--text);
   font-size: 14px;
   font-weight: 650;
@@ -829,7 +822,7 @@ p {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 0;
+  border-radius: var(--radius);
   object-fit: cover;
 }
 
@@ -910,7 +903,6 @@ p {
   line-height: 1;
   object-fit: cover;
   user-select: none;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
   container-type: inline-size;
 }
 
@@ -948,7 +940,7 @@ p {
   width: 32px;
   height: 32px;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: #f8fafc;
   color: #0f172a;
   font-size: 12px;
@@ -979,7 +971,7 @@ p {
   display: flex;
   align-items: center;
   gap: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 7px;
 }
 
@@ -994,7 +986,7 @@ p {
   height: 28px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--hover-bg);
   object-fit: cover;
   font-size: 12px;
@@ -1012,7 +1004,7 @@ figure {
 figure img {
   aspect-ratio: 16 / 10;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius);
   object-fit: cover;
 }
 
@@ -1029,12 +1021,9 @@ figcaption {
   padding: 16px 16px 18px;
   overflow: hidden;
   border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: #fff;
   color: #2b2d33;
-  box-shadow:
-    0 10px 28px rgba(17, 24, 39, 0.08),
-    0 2px 8px rgba(17, 24, 39, 0.04);
 }
 
 .playlist-toggle {
@@ -1047,11 +1036,10 @@ figcaption {
   height: 30px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.86);
   color: #303238;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(17, 24, 39, 0.1);
   transition:
     background-color 0.2s ease,
     transform 0.2s ease;
@@ -1077,11 +1065,10 @@ figcaption {
   height: 132px;
   place-items: center;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: #eef1f5;
   color: #5f6673;
   font-weight: 700;
-  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.12);
 }
 
 .music-cover-large img {
@@ -1138,7 +1125,7 @@ figcaption {
 .progress-track {
   height: 5px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: #e7e7e7;
 }
 
@@ -1171,7 +1158,7 @@ figcaption {
   height: 30px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: transparent;
   color: #303238;
   cursor: pointer;
@@ -1189,9 +1176,6 @@ figcaption {
   width: 44px;
   height: 44px;
   background: #fff;
-  box-shadow:
-    0 8px 18px rgba(17, 24, 39, 0.1),
-    inset 0 0 0 1px rgba(17, 24, 39, 0.06);
 }
 
 .hidden-player {
@@ -1214,7 +1198,6 @@ figcaption {
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(16px);
   color: #2b2d33;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 }
 
 .playlist-head {
@@ -1235,7 +1218,7 @@ figcaption {
   height: 28px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.72);
   color: #303238;
   cursor: pointer;
@@ -1256,7 +1239,7 @@ figcaption {
   gap: 9px;
   width: 100%;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   padding: 7px;
   color: inherit;
@@ -1275,7 +1258,7 @@ figcaption {
   width: 34px;
   height: 34px;
   place-items: center;
-  border-radius: 7px;
+  border-radius: var(--radius);
   background: #eef1f5;
   object-fit: cover;
   color: #858891;
