@@ -80,7 +80,7 @@ function applyTheme() {
   display: grid;
   align-content: start;
   gap: 16px;
-  width: 280px;
+  width: 260px;
 }
 
 .shell-column-left,

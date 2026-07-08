@@ -616,52 +616,40 @@ const timeText = computed(() =>
       </div>
     </template>
     <template v-else-if="widget.type === 'PROFILE'">
-      <div class="profile-card">
-        <div class="profile-cover">
-          <img v-if="normalized.coverImage" :src="normalized.coverImage as string" alt="" />
-          <div class="profile-cover-overlay"></div>
-          <svg
-            class="profile-cover-mask"
-            focusable="false"
-            aria-hidden="true"
-            viewBox="0 0 144 62"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="m111.34 23.88c-10.62-10.46-18.5-23.88-38.74-23.88h-1.2c-20.24 0-28.12 13.42-38.74 23.88-7.72 9.64-19.44 11.74-32.66 12.12v26h144v-26c-13.22-.38-24.94-2.48-32.66-12.12z"
-              fill="currentColor"
-              fill-rule="evenodd"
+      <div class="profile-card-new">
+        <div class="profile-content-row">
+          <div class="profile-avatar-wrapper-new">
+            <img
+              v-if="normalized.avatar"
+              class="profile-avatar-img"
+              :src="normalized.avatar as string"
+              :alt="(normalized.name as string) || ''"
             />
-          </svg>
-          <img
-            v-if="normalized.avatar"
-            class="profile-avatar u-shadow-avatar"
-            :src="normalized.avatar as string"
-            :alt="(normalized.name as string) || ''"
-          />
-          <div v-else class="profile-avatar profile-avatar-fallback u-shadow-avatar">
-            {{ ((normalized.name as string) || 'U').slice(0, 1) }}
+            <div v-else class="profile-avatar-img profile-avatar-fallback-new">
+              {{ ((normalized.name as string) || 'U').slice(0, 1) }}
+            </div>
+          </div>
+          <div class="profile-info-new">
+            <div class="profile-name-row-new">
+              <strong class="profile-name-new">{{ normalized.name || '星辰' }}</strong>
+              <span class="profile-badge-new">⭐</span>
+            </div>
+            <p class="profile-bio-new">{{ normalized.bio || '热爱技术与设计，专注于创造有价值的产品体验 ✨' }}</p>
           </div>
         </div>
-        <div class="profile-main">
-          <strong>{{ normalized.name || widget.title || 'Profile' }}</strong>
-          <p v-if="normalized.role || normalized.bio">{{ normalized.role || normalized.bio }}</p>
-          <div v-if="Array.isArray(normalized.socials) && normalized.socials.length" class="profile-socials">
-            <component
-              v-for="social in normalized.socials"
-              :key="social.platform || social.url || social.qrCode"
-              :is="social.url ? 'a' : 'span'"
-              :href="social.url || undefined"
-              :target="social.url ? '_blank' : undefined"
-              :rel="social.url ? 'noreferrer' : undefined"
-              :aria-label="getSocialLabel(social)"
-              :title="getSocialLabel(social)"
-            >
-              <img v-if="getSocialIconUrl(social)" :src="getSocialIconUrl(social)" :alt="getSocialLabel(social)" />
-              <span v-else>{{ getSocialLabel(social).slice(0, 2) }}</span>
-            </component>
-          </div>
+        <div v-if="Array.isArray(normalized.socials) && normalized.socials.length" class="profile-socials-new">
+          <a
+            v-for="social in normalized.socials"
+            :key="social.platform || social.url || social.qrCode"
+            :href="social.url || undefined"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-icon-link-new"
+            :title="getSocialLabel(social)"
+          >
+            <img v-if="getSocialIconUrl(social)" :src="getSocialIconUrl(social)" :alt="getSocialLabel(social)" />
+            <span v-else class="social-text-icon">{{ getSocialLabel(social).slice(0, 2) }}</span>
+          </a>
         </div>
       </div>
     </template>
@@ -799,167 +787,141 @@ p {
   transform: translateY(-8px);
 }
 
-.profile-card {
+/* Profile Widget - New Card Style */
+.profile-card-new {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   overflow: hidden;
   margin: -16px;
   border-radius: inherit;
-  background: #fff;
-  color: #0f172a;
+  background: linear-gradient(135deg, #e8f4fd 0%, #f3e8fc 50%, #fce8f3 100%);
+  padding: 24px 20px 20px;
 }
 
-.profile-cover {
-  position: relative;
-  height: 158px;
-  overflow: visible;
-  background:
-    linear-gradient(135deg, #0f172a, #737373);
-}
-
-.profile-cover img:not(.profile-avatar) {
+.profile-card-new::before {
   position: absolute;
-  z-index: 0;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: var(--radius);
-  object-fit: cover;
-}
-
-.profile-cover-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  display: inherit;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  aspect-ratio: inherit;
-  background-color: rgba(var(--palette-common-blackChannel, 0 0 0) / 48%);
-  pointer-events: none;
-}
-
-.profile-cover-mask {
-  user-select: none;
-  display: inline-block;
-  flex-shrink: 0;
-  fill: currentcolor;
-  font-size: 1.5rem;
-  position: absolute;
-  right: 0;
-  bottom: -26px;
-  left: 0;
-  z-index: 10;
-  width: 144px;
-  height: 62px;
-  margin-right: auto;
-  margin-left: auto;
-  color: var(--palette-background-paper, #fff);
-  transition: fill 300ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.profile-main {
-  display: grid;
-  justify-items: center;
-  gap: 9px;
-  padding: 48px 18px 24px;
-  text-align: center;
-}
-
-.profile-avatar {
-  position: absolute;
-  right: 0;
-  bottom: -32px;
-  left: 0;
-  z-index: 11;
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-right: auto;
-  margin-left: auto;
-  overflow: hidden;
-  border: 0;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  background: #eef2f7;
-  color: #334155;
-  font-family:
-    'Public Sans Variable',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
-  font-size: 1.125rem;
-  font-weight: 500;
-  line-height: 1;
+  background: radial-gradient(circle, rgba(255, 182, 193, 0.35) 0%, transparent 70%);
+  content: '';
+}
+
+.profile-card-new::after {
+  position: absolute;
+  bottom: -30px;
+  left: -30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(173, 216, 230, 0.28) 0%, transparent 70%);
+  content: '';
+}
+
+.profile-content-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.profile-avatar-wrapper-new {
+  flex-shrink: 0;
+}
+
+.profile-avatar-img {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 50%;
   object-fit: cover;
-  user-select: none;
-  container-type: inline-size;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.9);
 }
 
-.profile-avatar-fallback {
-  font-size: 28px;
+.profile-avatar-fallback-new {
+  font-size: 26px;
   font-weight: 700;
+  color: #6366f1;
 }
 
-.profile-main strong {
-  margin-top: 6px;
-  font-size: 17px;
+.profile-info-new {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.profile-name-row-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-name-new {
+  color: #1a1a2e;
+  font-size: 19px;
   font-weight: 750;
   line-height: 1.2;
 }
 
-.profile-main p {
+.profile-badge-new {
+  font-size: 16px;
+}
+
+.profile-bio-new {
   margin: 0;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.35;
+  color: #4a4a6a;
+  font-size: 13px;
+  line-height: 1.65;
 }
 
-.profile-socials {
+.profile-socials-new {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.social-icon-link-new {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 18px;
-  min-height: 28px;
-  margin-top: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.profile-socials a,
-.profile-socials > span {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: var(--radius);
-  background: #f8fafc;
-  color: #0f172a;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
+.social-icon-link-new:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-.profile-socials a:hover {
-  background: #eef2f7;
-  transform: translateY(-1px);
-}
-
-.profile-socials img {
-  width: 17px;
-  height: 17px;
+.social-icon-link-new img {
+  width: 18px;
+  height: 18px;
   object-fit: contain;
+}
+
+.social-text-icon {
+  color: #4a4a6a;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .link-list {

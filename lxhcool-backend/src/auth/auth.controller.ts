@@ -5,17 +5,11 @@ import { ok } from '../common/api-response';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { RequestRegisterCodeDto } from './dto/request-register-code.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
-
-  @Post('register/code')
-  async requestRegisterCode(@Body() dto: RequestRegisterCodeDto) {
-    return ok(await this.auth.requestRegisterCode(dto));
-  }
 
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {

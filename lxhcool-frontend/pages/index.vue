@@ -2,16 +2,18 @@
 import { Heart, MessageCircle } from '@lucide/vue';
 import { listPublicPosts } from '~/entities/post/api/postApi';
 import { listPublicProjects } from '~/entities/project/api/projectApi';
+import { listPublicWidgets } from '~/entities/widget/api/widgetApi';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import MomentMusicCard from '~/components/moments/MomentMusicCard.vue';
 
 const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
 const { data: homeData } = await useAsyncData('home', async () => {
-  const [posts, projects] = await Promise.all([
+  const [posts, projects, widgets] = await Promise.all([
     listPublicPosts('MOMENT'),
     listPublicProjects({ featured: true }),
+    listPublicWidgets(),
   ]);
-  return { posts, projects };
+  return { posts, projects, widgets };
 });
 
 const home = computed(() => {
@@ -20,6 +22,18 @@ const home = computed(() => {
   }
 
   return homeData.value;
+});
+
+const profile = computed(() => {
+  const profileWidget = home.value.widgets.find(
+    (w) => w.type === 'PROFILE' && w.enabled,
+  );
+  const cfg = profileWidget?.config ?? {};
+  return {
+    coverImage: resolveAssetUrl(typeof cfg.coverImage === 'string' ? cfg.coverImage : '') || '/images/default-cover.jpg',
+    avatar: resolveAssetUrl(typeof cfg.avatar === 'string' ? cfg.avatar : '') || '/images/default-avatar.jpg',
+    name: typeof cfg.name === 'string' && cfg.name ? cfg.name : '哈基米',
+  };
 });
 
 function resolveAssetUrl(url?: string | null) {
@@ -89,10 +103,10 @@ function formatDate(value?: string | null) {
 <template>
   <main class="home-page">
     <section class="moments-profile">
-      <img class="moments-cover" src="/images/moments-cover.jpg" alt="" />
+      <img class="moments-cover" :src="profile.coverImage" alt="" />
       <div class="moments-owner">
-        <strong>lxhcoool</strong>
-        <img class="u-shadow-profile-avatar" src="/images/profile-avatar.jpg" alt="" />
+        <strong v-if="profile.name" class="moments-owner-name">{{ profile.name }}</strong>
+        <img class="u-shadow-profile-avatar" :src="profile.avatar" alt="头像" />
       </div>
     </section>
 
@@ -102,10 +116,10 @@ function formatDate(value?: string | null) {
       </article>
 
       <article v-for="post in home.posts" :key="post.id" class="moment-card">
-        <img class="feed-avatar" src="/images/profile-avatar.jpg" alt="" />
+        <img class="feed-avatar" :src="profile.avatar" alt="" />
         <div class="moment-body">
           <header class="moment-header">
-            <span class="author-name">lxhcoool</span>
+            <span class="author-name">{{ profile.name || '' }}</span>
           </header>
 
           <p class="moment-text">{{ post.title }}</p>
@@ -185,6 +199,7 @@ function formatDate(value?: string | null) {
 .home-page {
   display: grid;
   gap: 28px;
+  position: relative;
 }
 
 .moments-profile {
@@ -219,28 +234,25 @@ function formatDate(value?: string | null) {
 
 .moments-owner {
   position: absolute;
-  right: 24px;
-  bottom: -34px;
+  right: 16px;
+  bottom: -24px;
   z-index: 2;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
 }
 
 .moments-owner strong {
-  margin-top: 10px;
+  margin-top: 12px;
   color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  font-size: 14px;
 }
 
 .moments-owner img {
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   opacity: 1;
-  border: 3px solid #fff;
-  border-radius: 50%;
+  border-radius: 12px;
   background: #fff;
   object-fit: cover;
 }

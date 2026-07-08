@@ -2,6 +2,16 @@ import type { AdminUser } from '~/entities/admin-user/model/types';
 import type { ApiResponse } from '~/shared/types/api';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 
+export async function loginAdminUser(payload: { email: string; password: string }) {
+  const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+  const response = await $fetch<ApiResponse<AdminUser>>(`${apiBaseUrl}/auth/login`, {
+    method: 'POST',
+    body: payload,
+    credentials: 'include',
+  });
+  return response;
+}
+
 export async function getCurrentAdminUser() {
   const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
 

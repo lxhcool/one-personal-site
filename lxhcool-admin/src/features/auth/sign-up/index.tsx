@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -17,7 +16,7 @@ export function SignUp() {
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>注册账号</CardTitle>
           <CardDescription>
-            使用邮箱验证码创建后台管理员账号。已有账号？{' '}
+            创建后台管理员账号。已有账号？{' '}
             <Link
               to='/sign-in'
               className='underline underline-offset-4 hover:text-primary'
@@ -29,11 +28,6 @@ export function SignUp() {
         <CardContent>
           <SignUpForm />
         </CardContent>
-        <CardFooter>
-          <p className='px-8 text-center text-sm text-muted-foreground'>
-            验证码将通过 Resend 发送到你的邮箱。
-          </p>
-        </CardFooter>
       </Card>
     </AuthLayout>
   )

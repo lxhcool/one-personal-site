@@ -53,16 +53,10 @@ export const authApi = {
     apiFetch<boolean>('/auth/logout', {
       method: 'POST',
     }),
-  requestRegisterCode: (payload: { email: string }) =>
-    apiFetch<{ sent: boolean }>('/auth/register/code', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
   register: (payload: {
     email: string
     password: string
-    code: string
-    name?: string
+    name: string
   }) =>
     apiFetch<AdminUser>('/auth/register', {
       method: 'POST',
