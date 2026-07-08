@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { listPublicWidgets } from '~/entities/widget/api/widgetApi';
+import { getCurrentAdminUser } from '~/entities/admin-user/api/authApi';
 import WidgetRenderer from '~/components/widgets/WidgetRenderer.vue';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
-const { data: widgetsData } = await useAsyncData('public-widgets', () => listPublicWidgets());
+const [{ data: widgetsData }, { data: currentUser }] = await Promise.all([
+  useAsyncData('public-widgets', () => listPublicWidgets()),
+  useAsyncData('current-user', () => getCurrentAdminUser()),
+]);
+
+const isLoggedIn = computed(() => currentUser.value != null);
 
 onMounted(() => {
   const storedTheme = window.localStorage.getItem('site-theme');
@@ -15,7 +21,7 @@ onMounted(() => {
 
 watch(theme, () => applyTheme());
 
-const widgets = computed(() => widgetsData.value ?? []);
+const widgets = computed(() => (isLoggedIn.value ? (widgetsData.value ?? []) : []));
 const leftWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'LEFT'));
 const rightWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'RIGHT'));
 const shellClass = computed(() => ({

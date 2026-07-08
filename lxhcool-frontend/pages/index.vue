@@ -257,29 +257,37 @@ function formatDate(value?: string | null) {
   object-fit: cover;
 }
 
+/* ====== 动态列表 ====== */
+
 .moment-feed {
-  display: grid;
-  gap: 0;
-  background: var(--card-bg, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .empty-card {
+  padding: 40px 24px;
   border-radius: var(--radius);
   background: var(--card-bg, #fff);
-}
-
-.empty-card {
-  padding: 24px;
   color: var(--text-muted, #667085);
   text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.3px;
 }
 
 .moment-card {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
-  gap: 10px;
-  padding: 14px 0 0;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius);
   background: var(--card-bg, #fff);
+  transition: background 0.15s ease;
+}
+
+.moment-card:hover {
+  background: #fafbfc;
 }
 
 .feed-avatar {
@@ -287,36 +295,42 @@ function formatDate(value?: string | null) {
   height: 42px;
   border-radius: 50%;
   object-fit: cover;
+  border: 1.5px solid #eef0f3;
+  flex-shrink: 0;
 }
 
 .moment-header {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .moment-body {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #eef0f3;
 }
 
 .author-name {
   color: #576b95;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .moment-text {
   margin: 0;
   color: var(--text-main, #1f2937);
-  line-height: 1.65;
+  font-size: 15px;
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
+  overflow: hidden;
+  border-radius: var(--radius);
 }
 
 .photo-grid.is-single {
@@ -326,12 +340,19 @@ function formatDate(value?: string | null) {
 .photo-grid img {
   aspect-ratio: 1 / 1;
   width: 100%;
-  border-radius: var(--radius);
+  border-radius: 4px;
   object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.photo-grid img:hover {
+  transform: scale(1.03);
 }
 
 .photo-grid.is-single img {
   aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
 }
 
 .video-card {
@@ -341,6 +362,7 @@ function formatDate(value?: string | null) {
 
 .video-card strong {
   color: var(--text-main, #1f2937);
+  font-size: 14px;
 }
 
 .video-card video,
@@ -356,14 +378,18 @@ function formatDate(value?: string | null) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 2px;
+  padding-top: 4px;
   color: #8a94a6;
   font-size: 12px;
 }
 
+.moment-actions time {
+  opacity: 0.6;
+}
+
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .action-buttons button {
@@ -371,17 +397,23 @@ function formatDate(value?: string | null) {
   align-items: center;
   gap: 4px;
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: #f5f6f8;
   color: #576b95;
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
-  padding: 6px 8px;
+  padding: 6px 10px;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .action-buttons button:hover {
-  background: #eef1f6;
+  background: #e8ecf2;
+  color: #4c6b8a;
+}
+
+.action-buttons button:active {
+  transform: scale(0.95);
 }
 
 .project-strip {
@@ -416,12 +448,17 @@ function formatDate(value?: string | null) {
 
   .moment-card {
     grid-template-columns: 38px minmax(0, 1fr);
-    gap: 9px;
+    gap: 10px;
+    padding: 14px;
   }
 
   .feed-avatar {
     width: 38px;
     height: 38px;
+  }
+
+  .moment-text {
+    font-size: 14px;
   }
 }
 </style>
