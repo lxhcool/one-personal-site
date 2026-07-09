@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-07-04',
+  modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/styles/reset.css', '~/assets/styles/shadows.css', '~/assets/styles/theme.css'],
   runtimeConfig: {
     public: {

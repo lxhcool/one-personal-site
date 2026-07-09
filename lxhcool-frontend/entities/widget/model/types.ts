@@ -6,7 +6,8 @@ export type WidgetType =
   | 'FRIEND_LINKS'
   | 'PROFILE'
   | 'DATE_CARD'
-  | 'PHOTO_GALLERY';
+  | 'PHOTO_GALLERY'
+  | 'PROJECT_TREE';
 
 export type SiteWidget = {
   id: string;

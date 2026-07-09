@@ -124,7 +124,7 @@ async function getNeteasePlaylist(url: string) {
     title: playlist?.name ?? '',
     cover: playlist?.coverImgUrl ?? '',
     trackCount: ids.length || tracks.length,
-    tracks: tracks.map(formatNeteaseSong).filter((track) => track.id),
+    tracks: await injectAudioUrls(tracks.map(formatNeteaseSong).filter((track) => track.id)),
   });
 }
 
@@ -176,7 +176,33 @@ function formatNeteaseSong(song: NeteaseSong) {
     duration: readSongDuration(song),
     externalUrl: id ? `https://music.163.com/#/song?id=${id}` : '',
     embedUrl: id ? `https://music.163.com/outchain/player?type=2&id=${id}&auto=0&height=66` : '',
+    audioUrl: '',
   };
+}
+
+async function injectAudioUrls(tracks: ReturnType<typeof formatNeteaseSong>[]) {
+  const ids = tracks.map((t) => t.id).filter(Boolean);
+  if (ids.length === 0) return tracks;
+  try {
+    const response = await fetch('https://music.163.com/api/song/enhance/player/url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...neteaseHeaders(),
+      },
+      body: new URLSearchParams({ ids: `[${ids.join(',')}]`, br: '320000' }),
+    });
+    if (!response.ok) return tracks;
+    const body = (await response.json()) as { data?: Array<{ id: number; url: string }> };
+    const urlMap = new Map((body.data ?? []).map((item) => [String(item.id), item.url]));
+    for (const track of tracks) {
+      const url = urlMap.get(track.id);
+      if (url) track.audioUrl = url;
+    }
+  } catch {
+    // audio URLs are optional; keep existing data
+  }
+  return tracks;
 }
 
 function readSongDuration(song: { duration?: number; dt?: number }) {

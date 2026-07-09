@@ -6,6 +6,7 @@ import { useFriendLinks } from './useFriendLinks';
 import { useProfile } from './useProfile';
 import { useDateCard } from './useDateCard';
 import { usePhotoGallery } from './usePhotoGallery';
+import { useProjectTree } from './useProjectTree';
 
 const registry: Record<WidgetType, WidgetStrategy> = {
   MUSIC_PLAYER: useMusicPlayer(),
@@ -14,6 +15,7 @@ const registry: Record<WidgetType, WidgetStrategy> = {
   PROFILE: useProfile(),
   DATE_CARD: useDateCard(),
   PHOTO_GALLERY: usePhotoGallery(),
+  PROJECT_TREE: useProjectTree(),
 };
 
 export function useWidgetRegistry() {

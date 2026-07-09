@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --page-bg: #f5f5f5;
+  --page-bg: #efe4d4;
   --card-bg: #ffffff;
   --text: #1f2328;
   --text-muted: #6b7280;
@@ -28,8 +28,23 @@
 }
 
 body {
-  background: var(--page-bg);
+  background-color: var(--page-bg);
   color: var(--text);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 75rem;
+  height: 56.25rem;
+  background-color: rgba(240, 242, 244, 0.72);
+  border-radius: 50%;
+  filter: blur(8rem);
+  transform: matrix(0.891007, 0.45399, -0.45399, 0.891007, -600, -450);
+  pointer-events: none;
+  z-index: 0;
 }
 
 a {

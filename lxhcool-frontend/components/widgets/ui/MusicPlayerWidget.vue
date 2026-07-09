@@ -11,35 +11,24 @@ const widgetRef = toRef(props, 'widget');
 const {
   audioRef, activeEmbedUrl, isPlaying, isPlaylistOpen, playlistIndex,
   progressRatio, currentTimeLabel, durationLabel,
-  playlist, currentTrack, displayTitle, displayArtist, displayCover,
+  playlist, currentTrack, displayTitle, displayArtist,
   toggleMusic, playPreviousTrack, playNextTrack, selectPlaylistTrack,
   updateAudioProgress, formatTime,
 } = useMusicPlayerSetup(widgetRef, apiBaseUrl);
 </script>
 
 <template>
-  <div class="music-panel u-shadow-panel">
-    <button type="button" class="playlist-toggle u-shadow-toggle"
-      aria-label="Open playlist" @click="isPlaylistOpen = true">
-      <ListMusic :size="16" stroke-width="1.8" />
-    </button>
-
-    <div class="music-visual">
-      <img class="vinyl-disc" :class="{ spinning: isPlaying }" src="/images/music-disc-glow.png" alt="" />
-      <div class="music-cover u-shadow-cover">
-        <img v-if="displayCover" :src="displayCover" alt="" />
-        <span v-else class="music-cover-fallback">♪</span>
-      </div>
+  <div class="player">
+    <!-- 歌曲信息 -->
+    <div class="player-info">
+      <span class="player-title">{{ displayTitle }}</span>
+      <span class="player-artist">{{ displayArtist }}</span>
     </div>
 
-    <div class="music-meta">
-      <strong class="music-title">{{ displayTitle }}</strong>
-      <p class="music-artist">{{ displayArtist }}</p>
-    </div>
-
-    <div class="music-progress">
-      <div class="progress-track">
-        <span class="progress-fill" :style="{ width: `${progressRatio * 100}%` }"></span>
+    <!-- 进度条 -->
+    <div class="player-progress">
+      <div class="progress-bar">
+        <span class="progress-fill" :style="{ width: `${progressRatio * 100}%` }" />
       </div>
       <div class="progress-time">
         <span>{{ currentTimeLabel }}</span>
@@ -47,20 +36,24 @@ const {
       </div>
     </div>
 
-    <div class="music-controls">
-      <button type="button" aria-label="Previous" @click="playPreviousTrack">
-        <SkipBack :size="17" stroke-width="1.8" />
+    <!-- 控制按钮 -->
+    <div class="player-controls">
+      <button type="button" class="ctrl-btn" aria-label="Previous" @click="playPreviousTrack">
+        <SkipBack :size="14" stroke-width="2" />
       </button>
-      <button type="button" class="main-control u-shadow-primary-control"
-        :aria-label="isPlaying ? 'Pause' : 'Play'" @click="toggleMusic">
-        <Pause v-if="isPlaying" :size="20" stroke-width="2.2" />
-        <Play v-else :size="20" stroke-width="2" fill="currentColor" />
+      <button type="button" class="ctrl-btn is-main" :aria-label="isPlaying ? 'Pause' : 'Play'" @click="toggleMusic">
+        <Pause v-if="isPlaying" :size="16" stroke-width="2.2" />
+        <Play v-else :size="16" stroke-width="2" fill="currentColor" />
       </button>
-      <button type="button" aria-label="Next" @click="playNextTrack">
-        <SkipForward :size="17" stroke-width="1.8" />
+      <button type="button" class="ctrl-btn" aria-label="Next" @click="playNextTrack">
+        <SkipForward :size="14" stroke-width="2" />
+      </button>
+      <button type="button" class="ctrl-btn" aria-label="Playlist" @click="isPlaylistOpen = true">
+        <ListMusic :size="14" stroke-width="2" />
       </button>
     </div>
 
+    <!-- 隐藏播放器 -->
     <audio v-if="currentTrack?.audioUrl"
       ref="audioRef"
       :src="currentTrack.audioUrl"
@@ -68,30 +61,29 @@ const {
       @loadedmetadata="updateAudioProgress"
       @timeupdate="updateAudioProgress"
       @ended="playNextTrack" />
-
     <iframe v-if="activeEmbedUrl" class="hidden-player" :src="activeEmbedUrl"
       title="Music player" frameborder="0" allow="autoplay" />
 
-    <Transition name="playlist-panel">
-      <div v-if="isPlaylistOpen" class="playlist-overlay u-shadow-inset-overlay">
+    <!-- 播放列表弹窗 -->
+    <Transition name="playlist">
+      <div v-if="isPlaylistOpen" class="playlist-overlay">
         <div class="playlist-head">
-          <strong>播放列表</strong>
+          <span>播放列表</span>
           <button type="button" aria-label="Close" @click="isPlaylistOpen = false">
-            <X :size="16" stroke-width="1.8" />
+            <X :size="14" stroke-width="2" />
           </button>
         </div>
-        <div class="playlist-scroll">
+        <div class="playlist-body">
           <button v-for="(track, index) in playlist" :key="track.id"
-            type="button" class="playlist-item"
+            type="button" class="playlist-track"
             :class="{ active: index === playlistIndex }"
             @click="selectPlaylistTrack(index)">
-            <img v-if="track.cover" :src="track.cover" alt="" class="pl-cover" />
-            <span v-else class="pl-cover-fallback">{{ index + 1 }}</span>
-            <span class="pl-text">
+            <span class="pl-index">{{ index + 1 }}</span>
+            <span class="pl-info">
               <strong>{{ track.title }}</strong>
               <small>{{ track.artist }}</small>
             </span>
-            <small v-if="track.duration" class="pl-duration">{{ formatTime(track.duration) }}</small>
+            <small v-if="track.duration" class="pl-time">{{ formatTime(track.duration) }}</small>
           </button>
           <div v-if="playlist.length === 0" class="playlist-empty">暂无歌曲</div>
         </div>
@@ -101,169 +93,127 @@ const {
 </template>
 
 <style scoped>
-.music-panel {
+.player {
+  --ink: #3a4654;
+  --muted: #8b919a;
+
   position: relative;
-  display: grid;
-  gap: 12px;
-  padding: 16px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+  padding: 14px 16px 16px;
+  border-radius: 8px;
+  background: rgba(250, 251, 252, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  color: var(--text-primary);
+  user-select: none;
 }
 
-.playlist-toggle {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--hover-bg);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+/* 歌曲信息 */
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.playlist-toggle:hover {
-  background: var(--hover-bg-strong);
-  transform: translateY(-1px);
-}
-
-.music-visual {
-  position: relative;
-  height: 146px;
-}
-
-.music-cover {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 132px;
-  height: 132px;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--hover-bg);
-}
-
-.music-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.music-cover-fallback {
-  color: var(--text-tertiary);
-  font-size: 36px;
-}
-
-.vinyl-disc {
-  position: absolute;
-  left: 68px;
-  top: 6px;
-  width: 126px;
-  height: auto;
-  opacity: 1;
-  object-fit: contain;
-  transform-origin: center;
-}
-
-.vinyl-disc.spinning {
-  animation: vinyl-spin 4.8s linear infinite;
-}
-
-.music-meta {
-  display: grid;
-  gap: 3px;
-}
-
-.music-title {
-  overflow: hidden;
-  color: var(--text-primary);
-  font-size: 16px;
-  font-weight: 650;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.music-artist {
-  margin: 0;
-  overflow: hidden;
-  color: var(--text-tertiary);
+.player-title {
+  color: var(--ink);
   font-size: 13px;
+  font-weight: 700;
   line-height: 1.3;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.music-progress {
-  display: grid;
-  gap: 7px;
+.player-artist {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.progress-track {
-  height: 4px;
+/* 进度条 */
+.player-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.progress-bar {
+  height: 3px;
   overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--hover-bg);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .progress-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent);
+  background: var(--ink);
   transition: width 0.15s linear;
 }
 
 .progress-time {
   display: flex;
   justify-content: space-between;
-  color: var(--text-tertiary);
-  font-size: 11px;
+  color: var(--muted);
+  font-size: 10px;
   font-weight: 500;
 }
 
-.music-controls {
+/* 控制按钮 */
+.player-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 12px;
 }
 
-.music-controls button {
+.ctrl-btn {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--ink);
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  opacity: 0.55;
 }
 
-.music-controls button:hover {
-  background: var(--hover-bg);
-  transform: translateY(-1px);
+.ctrl-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  opacity: 0.85;
 }
 
-.music-controls .main-control {
-  width: 44px;
-  height: 44px;
-  background: var(--card-bg);
+.ctrl-btn:active {
+  transform: scale(0.93);
 }
 
+.ctrl-btn.is-main {
+  width: 34px;
+  height: 34px;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.ctrl-btn.is-main:hover {
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 1;
+}
+
+/* 隐藏播放器 */
 .hidden-player {
   position: absolute;
   width: 1px;
@@ -273,136 +223,142 @@ const {
   pointer-events: none;
 }
 
-/* Playlist overlay */
+/* 播放列表 */
 .playlist-overlay {
   position: absolute;
   inset: 0;
   z-index: 20;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  color: var(--text-primary);
+  background: rgba(250, 251, 252, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .playlist-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 14px 10px;
+  padding: 12px 14px 8px;
+  flex-shrink: 0;
 }
 
-.playlist-head strong {
-  font-size: 14px;
+.playlist-head span {
+  font-size: 12px;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .playlist-head button {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--hover-bg);
-  color: var(--text-secondary);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink);
   cursor: pointer;
 }
 
-.playlist-scroll {
-  display: grid;
-  align-content: start;
-  gap: 4px;
+.playlist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   overflow-y: auto;
-  padding: 0 10px 12px;
+  padding: 0 10px 10px;
+  flex: 1;
 }
 
-.playlist-item {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+.playlist-track {
+  display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   width: 100%;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   background: transparent;
-  padding: 7px;
+  padding: 6px 8px;
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background 0.12s ease;
 }
 
-.playlist-item:hover,
-.playlist-item.active {
-  background: rgba(255, 255, 255, 0.6);
+.playlist-track:hover,
+.playlist-track.active {
+  background: rgba(0, 0, 0, 0.04);
 }
 
-.pl-cover,
-.pl-cover-fallback {
+.pl-index {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--hover-bg);
-  object-fit: cover;
-  color: var(--text-tertiary);
-  font-size: 12px;
-  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.pl-text {
-  display: grid;
+.playlist-track.active .pl-index {
+  background: var(--ink);
+  color: #fff;
+}
+
+.pl-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
-  gap: 2px;
+  flex: 1;
 }
 
-.pl-text strong,
-.pl-text small {
+.pl-info strong,
+.pl-info small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pl-text strong {
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.pl-text small,
-.pl-duration {
-  color: var(--text-tertiary);
+.pl-info strong {
   font-size: 11px;
+  font-weight: 650;
+  color: var(--ink);
 }
 
-.pl-duration {
+.pl-info small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.pl-time {
+  color: var(--muted);
+  font-size: 10px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .playlist-empty {
-  padding: 44px 12px;
-  color: var(--text-tertiary);
+  padding: 32px 12px;
+  color: var(--muted);
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
 }
 
-.playlist-panel-enter-active,
-.playlist-panel-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+/* transition */
+.playlist-enter-active,
+.playlist-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.playlist-panel-enter-from,
-.playlist-panel-leave-to {
+.playlist-enter-from,
+.playlist-leave-to {
   opacity: 0;
-  transform: translateY(10px) scale(0.98);
-}
-
-@keyframes vinyl-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  transform: translateY(6px) scale(0.97);
 }
 </style>

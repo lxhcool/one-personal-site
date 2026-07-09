@@ -21,6 +21,7 @@ import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as AuthenticatedWidgetsIndexRouteImport } from './routes/_authenticated/widgets/index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
 import { Route as AuthenticatedPostsIndexRouteImport } from './routes/_authenticated/posts/index'
+import { Route as AuthenticatedMusicIndexRouteImport } from './routes/_authenticated/music/index'
 import { Route as AuthenticatedMomentsIndexRouteImport } from './routes/_authenticated/moments/index'
 import { Route as AuthenticatedFriendsIndexRouteImport } from './routes/_authenticated/friends/index'
 import { Route as AuthenticatedProjectsNewRouteImport } from './routes/_authenticated/projects/new'
@@ -94,6 +95,11 @@ const AuthenticatedProjectsIndexRoute =
 const AuthenticatedPostsIndexRoute = AuthenticatedPostsIndexRouteImport.update({
   id: '/posts/',
   path: '/posts/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMusicIndexRoute = AuthenticatedMusicIndexRouteImport.update({
+  id: '/music/',
+  path: '/music/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMomentsIndexRoute =
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/friends/': typeof AuthenticatedFriendsIndexRoute
   '/moments/': typeof AuthenticatedMomentsIndexRoute
+  '/music/': typeof AuthenticatedMusicIndexRoute
   '/posts/': typeof AuthenticatedPostsIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/widgets/': typeof AuthenticatedWidgetsIndexRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/friends': typeof AuthenticatedFriendsIndexRoute
   '/moments': typeof AuthenticatedMomentsIndexRoute
+  '/music': typeof AuthenticatedMusicIndexRoute
   '/posts': typeof AuthenticatedPostsIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/widgets': typeof AuthenticatedWidgetsIndexRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/new': typeof AuthenticatedProjectsNewRoute
   '/_authenticated/friends/': typeof AuthenticatedFriendsIndexRoute
   '/_authenticated/moments/': typeof AuthenticatedMomentsIndexRoute
+  '/_authenticated/music/': typeof AuthenticatedMusicIndexRoute
   '/_authenticated/posts/': typeof AuthenticatedPostsIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/widgets/': typeof AuthenticatedWidgetsIndexRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/projects/new'
     | '/friends/'
     | '/moments/'
+    | '/music/'
     | '/posts/'
     | '/projects/'
     | '/widgets/'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/projects/new'
     | '/friends'
     | '/moments'
+    | '/music'
     | '/posts'
     | '/projects'
     | '/widgets'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/new'
     | '/_authenticated/friends/'
     | '/_authenticated/moments/'
+    | '/_authenticated/music/'
     | '/_authenticated/posts/'
     | '/_authenticated/projects/'
     | '/_authenticated/widgets/'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       path: '/posts'
       fullPath: '/posts/'
       preLoaderRoute: typeof AuthenticatedPostsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/music/': {
+      id: '/_authenticated/music/'
+      path: '/music'
+      fullPath: '/music/'
+      preLoaderRoute: typeof AuthenticatedMusicIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/moments/': {
@@ -536,6 +555,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsNewRoute: typeof AuthenticatedProjectsNewRoute
   AuthenticatedFriendsIndexRoute: typeof AuthenticatedFriendsIndexRoute
   AuthenticatedMomentsIndexRoute: typeof AuthenticatedMomentsIndexRoute
+  AuthenticatedMusicIndexRoute: typeof AuthenticatedMusicIndexRoute
   AuthenticatedPostsIndexRoute: typeof AuthenticatedPostsIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedWidgetsIndexRoute: typeof AuthenticatedWidgetsIndexRoute
@@ -556,6 +576,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsNewRoute: AuthenticatedProjectsNewRoute,
   AuthenticatedFriendsIndexRoute: AuthenticatedFriendsIndexRoute,
   AuthenticatedMomentsIndexRoute: AuthenticatedMomentsIndexRoute,
+  AuthenticatedMusicIndexRoute: AuthenticatedMusicIndexRoute,
   AuthenticatedPostsIndexRoute: AuthenticatedPostsIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
   AuthenticatedWidgetsIndexRoute: AuthenticatedWidgetsIndexRoute,

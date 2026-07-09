@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Link as LinkIcon,
   MessageCircle,
+  Music2,
   Puzzle,
   Tags,
 } from 'lucide-react'
@@ -73,6 +74,11 @@ export const sidebarData: SidebarData = {
           title: '小工具',
           url: '/widgets',
           icon: Puzzle,
+        },
+        {
+          title: '音乐播放器',
+          url: '/music',
+          icon: Music2,
         },
         {
           title: '友链',

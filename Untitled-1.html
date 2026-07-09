@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Document</title>
+    <style>
+    .wrap {
+  --radius: 40px;
+  --bg: #3498db;
+}
+
+.wrap::before {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 350px;
+  border-radius: 60px;
+  background-color: rgba(255, 255, 255, 0.05);
+  filter: blur(70px);
+  transform: skewY(-25deg);
+  pointer-events: none;
+}
+
+.wrap::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 60px;
+  background-color: rgba(0, 0, 0, 0.6);
+  filter: blur(40px);
+}
+
+.wrap input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  z-index: 999;
+  cursor: pointer;
+}
+
+.button {
+  position: relative;
+  overflow: hidden;
+  width: 180px;
+  height: 170px;
+  background-color: var(--bg);
+  z-index: 2;
+  border: transparent;
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 40%),
+    inset 0 -6px 1px -4px #03a9f4,
+    inset 0 -15px 6px -8px #2c6daf;
+  transition: all 0.3s ease;
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--radius) * 0.8);
+  border-top: 60px solid #414244;
+  border-left: 50px solid #2b2b2c;
+  border-right: 50px solid #2b2b2c;
+  border-bottom: 60px solid #15161a;
+  filter: blur(8px);
+  transition: all 0.5s ease;
+}
+
+.button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: auto;
+  top: 101%;
+  height: 60px;
+  width: 140px;
+  border-radius: 50px 50px 0 0;
+  background: #009cff;
+  filter: contrast(10) blur(8px);
+  transition: all 0.3s ease;
+  opacity: 1;
+}
+
+.button .corner {
+  transition: all 0.4s ease;
+  opacity: 0.1;
+}
+
+.button .corner::before,
+.button .corner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  border-top: 65px solid white;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  filter: blur(8px);
+}
+
+.button .corner::before {
+  left: 10px;
+  transform: rotate(-45deg);
+}
+
+.button .corner::after {
+  right: 10px;
+  transform: rotate(45deg);
+}
+
+.wrap input:hover + .button .corner {
+  opacity: 0.15;
+}
+
+.button .inner {
+  z-index: 9;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 25px 22px;
+  border-radius: calc(var(--radius) * 0.85);
+  background: linear-gradient(180deg, #232324 5%, #46484b 100%);
+  transition: all 0.3s ease;
+  box-shadow:
+    inset 0 -5px 15px -1px rgba(0, 0, 0, 0.3),
+    inset 0 -4px 3px -3px black,
+    inset 0 -10px 20px -8px rgb(255 255 255 / 40%),
+    inset 0 1px 0 1px rgb(255 255 255 / 20%);
+}
+
+.button .inner svg {
+  display: block;
+  overflow: visible;
+  height: 50%;
+}
+
+.button .inner svg .symbol {
+  fill: #212123;
+}
+
+.button .inner svg .symbol-path {
+  filter: brightness(1.1) contrast(1.1);
+}
+
+.button .inner svg .symbol-path path {
+  stroke-dasharray: 700;
+  stroke-dashoffset: -700;
+  stroke-width: 6;
+  stroke: #3c69ff;
+  animation: symbolPath 2.2s ease-in-out;
+}
+.button .inner svg .symbol-path-glow path {
+  stroke-dasharray: 700;
+  stroke-dashoffset: -700;
+  stroke-width: 35;
+  stroke: #0231ce;
+  filter: blur(35px);
+  animation: symbolPath 2.2s ease-in-out;
+}
+
+.button .inner svg .symbol-path circle {
+  fill: #3c69ff;
+  opacity: 0;
+  animation: symbolCircle 2.2s ease-in-out;
+}
+
+.button .inner svg .symbol-path-glow circle {
+  fill: #0231ce;
+  filter: blur(35px);
+  opacity: 0;
+  animation: symbolCircle 2.2s ease-in-out;
+}
+
+.bg {
+  background-color: black;
+  position: absolute;
+  inset: -10px;
+  border-radius: calc(var(--radius) * 1.25);
+  box-shadow: 0 25px 12px -12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.bg::before {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 -2px 0px -1px rgba(120, 210, 255, 0.3),
+    inset 0 0 5px 1px black,
+    inset 0 0 0 1px black;
+  inset: 0;
+  z-index: 1;
+}
+
+.bg .shine-1,
+.bg .shine-2::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  transition: all 0.3s ease;
+  background: rgba(0, 60, 255, 1);
+  width: 12px;
+  height: 12px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border-radius: 50%;
+  filter: blur(3px);
+  transform: translateY(0) scale(0);
+  animation: bg 2.6s linear 0.3s;
+}
+
+.bg .shine-2::before {
+  animation: bg 2.6s linear infinite;
+}
+
+.bg .shine-2 {
+  transition: all 0.5s linear;
+  opacity: 0;
+}
+
+.led {
+  position: absolute;
+  z-index: 10;
+  top: 90%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  transition: all 0.3s ease;
+  background-color: #66d9ef;
+  box-shadow:
+    0 0px 40px 20px #0036e7,
+    inset 0 1px 2px 0px rgba(255, 255, 255, 0.6),
+    0 0 0px 3px rgb(0 0 0 / 60%),
+    0 0 2px 4px rgba(0, 150, 255, 0.8);
+}
+
+.noise {
+  position: absolute;
+  top: -25px;
+  bottom: -25px;
+  left: 0;
+  right: 0;
+  opacity: 0.08;
+  mask-image: linear-gradient(
+    transparent 5%,
+    white 30%,
+    white 70%,
+    transparent 95%
+  );
+  filter: grayscale(1);
+}
+
+/** STATES */
+
+.wrap input:active + .button .inner svg .symbol-path path,
+.wrap input:active + .button .inner svg .symbol-path-glow path,
+.wrap input:active + .button .inner svg .symbol-path circle,
+.wrap input:active + .button .inner svg .symbol-path-glow circle,
+.wrap input:active + .button ~ .bg .shine-1 {
+  animation: none;
+}
+
+.wrap input:checked + .button .inner svg .symbol-path path,
+.wrap input:checked + .button .inner svg .symbol-path-glow path {
+  animation: symbolPath2 2.2s ease-in-out reverse;
+}
+
+.wrap input:checked + .button .inner svg .symbol-path path {
+  stroke: #b48518;
+}
+
+.wrap input:checked + .button .inner svg .symbol-path-glow path {
+  stroke: #714b00;
+}
+
+.wrap input:checked + .button .inner svg .symbol-path circle {
+  fill: #b48518;
+}
+
+.wrap input:checked + .button .inner svg .symbol-path-glow circle {
+  fill: #714b00;
+}
+
+.wrap input:hover + .button {
+  transform: scale(1.03);
+}
+
+.wrap input:active + .button {
+  transform: scale(0.96);
+  filter: contrast(1.07);
+  background-color: transparent;
+}
+
+.wrap input:active + .button::before {
+  box-shadow: 0 -12px 12px 12px black;
+}
+
+.wrap input:active + .button .inner {
+  background: linear-gradient(180deg, #232324 5%, #3b3d40 100%);
+  box-shadow:
+    inset 0 -5px 15px -1px rgba(0, 0, 0, 0.3),
+    inset 0 -4px 3px -3px black,
+    inset 0 -10px 20px -8px rgb(255 255 255 / 20%),
+    inset 0 1px 0 1px rgb(255 255 255 / 10%);
+  transform: scale(0.93);
+}
+
+.wrap input:checked + .button ~ .bg .shine-1 {
+  background-color: rgba(255, 187, 0, 0.7);
+}
+
+.wrap input:not(:checked):hover + .button ~ .bg .shine-2 {
+  opacity: 1;
+}
+
+.wrap input:active + .button .corner,
+.wrap input:active + .button ~ .bg-glow,
+.wrap input:not(:checked):active + .button ~ .bg .shine-2 {
+  opacity: 0;
+}
+
+.bg-glow {
+  transition: all 0.5s linear;
+}
+
+.bg-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background: linear-gradient(to bottom, #984fff 0%, black 100%);
+  filter: blur(12px);
+  opacity: 0;
+  animation: bgGlow 3.2s linear backwards;
+}
+
+@keyframes bgGlow {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  80%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.wrap input:checked + .button ~ .bg-glow::before {
+  background: linear-gradient(to bottom, #ff2200 0%, black 100%);
+  animation: bgGlow2 3.2s linear backwards;
+}
+
+@keyframes bgGlow2 {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.wrap input:checked + .button ~ .led {
+  animation: ledTurnOff 3.2s linear forwards;
+}
+
+@keyframes ledTurnOff {
+  30%,
+  60% {
+    background-color: #ffdf4e;
+    box-shadow:
+      0 -12px 40px 20px rgba(255, 200, 0, 0.6),
+      inset 0 1px 2px 0px white,
+      0 0 0px 3px rgb(0 0 0 / 60%),
+      0 0 2px 4px rgba(152, 119, 0, 0.3);
+  }
+  60.1%,
+  65% {
+    background-color: black;
+    box-shadow:
+      0 -12px 40px 20px transparent,
+      inset 0 1px 2px 0px transparent,
+      0 0 0px 3px rgb(0 0 0 / 10%),
+      0 0 2px 4px transparent;
+  }
+  65.1%,
+  70% {
+    background-color: #ffdf4e;
+    box-shadow:
+      0 -12px 40px 20px rgba(255, 200, 0, 0.6),
+      inset 0 1px 2px 0px white,
+      0 0 0px 3px rgb(0 0 0 / 60%),
+      0 0 2px 4px rgba(152, 119, 0, 0.3);
+  }
+
+  70.1%,
+  100% {
+    background-color: black;
+    box-shadow:
+      0 -12px 40px 20px transparent,
+      inset 0 1px 2px 0px transparent,
+      0 0 0px 3px rgb(0 0 0 / 10%),
+      0 0 2px 4px transparent;
+  }
+}
+
+.wrap input:checked + .button ~ .led::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #ffdf4e;
+  box-shadow: 0 0 0 2px #ffdf4e;
+  animation: ledGlow 2.5s linear infinite;
+}
+
+@keyframes ledGlow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes symbolPath {
+  0% {
+    stroke-dashoffset: -700;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes symbolPath2 {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -700;
+  }
+}
+
+@keyframes symbolCircle {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes bg {
+  0% {
+    transform: translateY(0) scale(0);
+  }
+  12% {
+    transform: translateY(0) scale(30);
+  }
+  60%,
+  100% {
+    transform: translateY(-250px) scale(25, 20);
+  }
+}
+
+    </style>
+</head>
+<body>
+    <label for="button" class="wrap">
+  <input id="button" aria-label="Bluetooth" type="checkbox" />
+  <button class="button">
+    <div class="corner"></div>
+    <div class="inner">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 390 430"
+        height="430"
+        width="390"
+      >
+        <g filter="url(#inset-shadow)" class="symbol">
+          <path
+            d="M202.884 13.3026C196.814 7.84601 188.099 6.46854 180.642 9.78694C173.182 13.1055 168.377 20.4983 168.377 28.6551V164.683L78.6175 75.0327C70.5431 66.9664 57.4523 66.9664 49.3779 75.0327C41.3037 83.0988 41.3037 96.1768 49.3779 104.243L159.813 214.548L49.3787 324.853C41.3045 332.919 41.3045 345.997 49.3787 354.063C57.453 362.129 70.5439 362.129 78.6182 354.063L168.377 264.413V400.441C168.377 408.598 173.182 415.99 180.642 419.309C188.099 422.629 196.814 421.251 202.884 415.794L306.262 322.847C310.618 318.931 313.105 313.35 313.105 307.495C313.105 301.639 310.618 296.06 306.262 292.142L219.958 214.548L306.262 136.954C310.618 133.037 313.105 127.457 313.105 121.602C313.105 115.746 310.618 110.166 306.262 106.249L202.884 13.3026ZM261.524 307.495L209.728 260.926V354.063L261.524 307.495ZM261.524 121.602L209.728 168.171V75.0327L261.524 121.602Z"
+            clip-rule="evenodd"
+            fill-rule="evenodd"
+          ></path>
+          <circle r="30" cy="215" cx="343"></circle>
+          <circle r="30" cy="215" cx="46"></circle>
+        </g>
+
+        <g class="symbol-path symbol-path-glow">
+          <circle r="30" cy="215" cx="343"></circle>
+          <circle r="30" cy="215" cx="46"></circle>
+          <path
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            d="M188.5 213.5L189.5 29L291.5 122C200.028 205.699 151.078 251.942 64 340"
+          ></path>
+          <path
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            d="M188.5 215.5L189.5 400L291.5 307C200.028 223.301 151.078 177.058 64 89"
+          ></path>
+        </g>
+
+        <g class="symbol-path">
+          <circle r="10" cy="215" cx="343"></circle>
+          <circle r="10" cy="215" cx="46"></circle>
+          <path
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            d="M188.5 213.5L189.5 29L291.5 122C200.028 205.699 151.078 251.942 64 340"
+          ></path>
+          <path
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            d="M188.5 215.5L189.5 400L291.5 307C200.028 223.301 151.078 177.058 64 89"
+          ></path>
+        </g>
+
+        <defs>
+          <defs>
+            <filter id="inset-shadow">
+              <feOffset dy="0" dx="0"></feOffset>
+              <feGaussianBlur
+                result="offset-blur"
+                stdDeviation="10"
+              ></feGaussianBlur>
+              <feComposite
+                result="inverse"
+                in2="offset-blur"
+                in="SourceGraphic"
+                operator="out"
+              ></feComposite>
+              <feFlood
+                result="color"
+                flood-opacity="1"
+                flood-color="black"
+              ></feFlood>
+              <feComposite
+                result="shadow"
+                in2="inverse"
+                in="color"
+                operator="in"
+              ></feComposite>
+              <feComposite
+                in2="SourceGraphic"
+                in="shadow"
+                operator="over"
+              ></feComposite>
+              <fedropshadow
+                flood-color="white"
+                flood-opacity="0.2"
+                stdDeviation="0"
+                dy="5"
+                dx="5"
+              ></fedropshadow>
+            </filter>
+          </defs>
+        </defs>
+      </svg>
+    </div>
+  </button>
+  <div class="led"></div>
+  <div class="bg">
+    <div class="shine-1"></div>
+    <div class="shine-2"></div>
+  </div>
+  <div class="bg-glow"></div>
+</label>
+
+<div class="noise">
+  <svg height="100%" width="100%">
+    <defs>
+      <pattern
+        height="500"
+        width="500"
+        patternUnits="userSpaceOnUse"
+        id="noise-pattern"
+      >
+        <filter y="0" x="0" id="noise">
+          <feTurbulence
+            stitchTiles="stitch"
+            numOctaves="3"
+            baseFrequency="0.65"
+            type="fractalNoise"
+          ></feTurbulence>
+          <feBlend mode="screen"></feBlend>
+        </filter>
+        <rect filter="url(#noise)" height="500" width="500"></rect>
+      </pattern>
+    </defs>
+    <rect fill="url(#noise-pattern)" height="100%" width="100%"></rect>
+  </svg>
+</div>
+
+</body>
+</html>

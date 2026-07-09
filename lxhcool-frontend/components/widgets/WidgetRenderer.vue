@@ -2,6 +2,7 @@
 import { ListMusic, Pause, Play, RefreshCw, SkipBack, SkipForward, X } from '@lucide/vue';
 import { listPublicFriendLinks } from '~/entities/friend-link/api/friendLinkApi';
 import type { SiteWidget } from '~/entities/widget/model/types';
+import ProjectTreeWidget from './ui/ProjectTreeWidget.vue';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import { requestPublicApi } from '~/shared/api/client';
 import { readArray, readBoolean, readNumber, readString } from '~/shared/widgets/lib/config';
@@ -104,6 +105,10 @@ const normalized = computed(() => {
     case 'PHOTO_GALLERY':
       return {
         images: readArray<{ url: string; alt?: string; caption?: string }>(config.value, 'images'),
+      };
+    case 'PROJECT_TREE':
+      return {
+        maxDepth: readNumber(config.value, 'maxDepth', 2),
       };
     default:
       return {};
@@ -668,6 +673,10 @@ const timeText = computed(() =>
           <figcaption v-if="image.caption">{{ image.caption }}</figcaption>
         </figure>
       </div>
+    </template>
+
+    <template v-else-if="widget.type === 'PROJECT_TREE'">
+      <ProjectTreeWidget :widget="widget" :normalized="normalized" />
     </template>
   </section>
 </template>
