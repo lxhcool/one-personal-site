@@ -166,10 +166,6 @@ function applyTheme() {
 
 .content-column :deep(main) {
   min-height: 320px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
   padding: 24px;
 }
 
