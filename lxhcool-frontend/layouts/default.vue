@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { listPublicWidgets } from '~/entities/widget/api/widgetApi';
 import { getCurrentAdminUser } from '~/entities/admin-user/api/authApi';
-import WidgetRenderer from '~/components/widgets/WidgetRenderer.vue';
 import Keyboard87 from '~/components/widgets/ui/Keyboard87.vue';
 import StandaloneMusicPlayer from '~/components/widgets/ui/StandaloneMusicPlayer.vue';
+import DateCardWidget from '~/components/widgets/ui/DateCardWidget.vue';
 import { useWidgetRegistry } from '~/components/widgets/strategies/useWidgetRegistry';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
@@ -101,7 +101,7 @@ function applyTheme() {
       </div>
     </template>
   </div>
-  <div class="site-shell">
+  <div class="site-shell" :class="shellClass">
     <main class="content-column">
       <slot />
     </main>
@@ -113,6 +113,10 @@ function applyTheme() {
 
   <div class="fixed z-10 left-6 bottom-4">
     <StandaloneMusicPlayer />
+  </div>
+
+  <div class="fixed z-10 calendar-side">
+    <DateCardWidget />
   </div>
 </template>
 
@@ -209,6 +213,19 @@ function applyTheme() {
 
 .tree-collapsed::before {
   transform: rotate(-90deg);
+}
+
+.calendar-side {
+  top: 50%;
+  right: -40px;
+  width: 260px;
+  transform: translateY(-50%) rotate(-2deg);
+}
+
+@media (max-width: 1320px) {
+  .calendar-side {
+    display: none;
+  }
 }
 </style>
 

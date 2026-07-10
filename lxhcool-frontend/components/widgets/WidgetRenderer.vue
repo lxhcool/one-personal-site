@@ -3,6 +3,7 @@ import { ListMusic, Pause, Play, RefreshCw, SkipBack, SkipForward, X } from '@lu
 import { listPublicFriendLinks } from '~/entities/friend-link/api/friendLinkApi';
 import type { SiteWidget } from '~/entities/widget/model/types';
 import ProjectTreeWidget from './ui/ProjectTreeWidget.vue';
+import DateCardWidget from './ui/DateCardWidget.vue';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import { requestPublicApi } from '~/shared/api/client';
 import { readArray, readBoolean, readNumber, readString } from '~/shared/widgets/lib/config';
@@ -440,35 +441,9 @@ const friendLinks = computed(() => {
   return ordered.slice(0, friendConfig.value.limit || 6);
 });
 
-const now = ref(new Date());
-let timer: ReturnType<typeof setInterval> | undefined;
-
-onMounted(() => {
-  if (props.widget.type !== 'DATE_CARD') return;
-  timer = setInterval(() => {
-    now.value = new Date();
-  }, 1000);
-});
-
 onBeforeUnmount(() => {
-  if (timer) clearInterval(timer);
   if (progressTimer) clearInterval(progressTimer);
 });
-
-const dateText = computed(() =>
-  new Intl.DateTimeFormat('zh-CN', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  }).format(now.value),
-);
-
-const timeText = computed(() =>
-  new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(now.value),
-);
 </script>
 
 <template>
@@ -476,6 +451,7 @@ const timeText = computed(() =>
     class="app-card widget-card"
     :class="[
       { 'music-widget-card': widget.type === 'MUSIC_PLAYER' },
+      { 'date-widget-card': widget.type === 'DATE_CARD' },
       widget.type === 'MUSIC_PLAYER' ? 'u-shadow-none' : '',
     ]"
   >
@@ -660,9 +636,7 @@ const timeText = computed(() =>
     </template>
 
     <template v-else-if="widget.type === 'DATE_CARD'">
-      <div class="widget-heading">{{ widget.title || '日期' }}</div>
-      <strong>{{ dateText }}</strong>
-      <p v-if="normalized.showTime">{{ timeText }}</p>
+      <DateCardWidget :widget="widget" :normalized="normalized" />
     </template>
 
     <template v-else-if="widget.type === 'PHOTO_GALLERY' && Array.isArray(normalized.images)">
@@ -691,6 +665,13 @@ const timeText = computed(() =>
   overflow: visible;
   border: 0;
   background: transparent;
+}
+
+.date-widget-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .widget-heading {
