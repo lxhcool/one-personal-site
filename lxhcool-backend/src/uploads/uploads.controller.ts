@@ -41,13 +41,13 @@ export class UploadsController {
         callback(null, imageMimeTypes.has(file.mimetype));
       },
       limits: {
-        fileSize: 5 * 1024 * 1024,
+        fileSize: 20 * 1024 * 1024,
       },
     }),
   )
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('Please upload a JPG, PNG, WebP, or GIF image under 5MB');
+      throw new BadRequestException('Please upload a JPG, PNG, WebP, or GIF image under 20MB');
     }
 
     return ok({

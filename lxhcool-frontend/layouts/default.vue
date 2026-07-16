@@ -4,6 +4,7 @@ import { getCurrentAdminUser } from '~/entities/admin-user/api/authApi';
 import Keyboard87 from '~/components/widgets/ui/Keyboard87.vue';
 import StandaloneMusicPlayer from '~/components/widgets/ui/StandaloneMusicPlayer.vue';
 import DateCardWidget from '~/components/widgets/ui/DateCardWidget.vue';
+import PhotoGalleryWidget from '~/components/widgets/ui/PhotoGalleryWidget.vue';
 import { useWidgetRegistry } from '~/components/widgets/strategies/useWidgetRegistry';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
@@ -77,6 +78,14 @@ const widgets = computed(() => {
 });
 const leftWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'LEFT'));
 const rightWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'RIGHT'));
+const photoGalleryWidget = computed(() =>
+  rightWidgets.value.find((widget) => widget.type === 'PHOTO_GALLERY'),
+);
+const photoGalleryNormalized = computed(() =>
+  photoGalleryWidget.value
+    ? getStrategy(photoGalleryWidget.value.type).normalize(photoGalleryWidget.value.config)
+    : {},
+);
 const shellClass = computed(() => ({
   'has-left': leftWidgets.value.length > 0,
   'has-right': rightWidgets.value.length > 0,
@@ -117,6 +126,10 @@ function applyTheme() {
 
   <div class="fixed z-10 calendar-side">
     <DateCardWidget />
+  </div>
+
+  <div v-if="photoGalleryWidget" class="fixed z-10 gallery-side">
+    <PhotoGalleryWidget :widget="photoGalleryWidget" :normalized="photoGalleryNormalized" />
   </div>
 </template>
 
@@ -222,8 +235,15 @@ function applyTheme() {
   transform: translateY(-50%) rotate(-2deg);
 }
 
+.gallery-side {
+  right: -8px;
+  bottom: 52px;
+  transform-origin: bottom right;
+}
+
 @media (max-width: 1320px) {
-  .calendar-side {
+  .calendar-side,
+  .gallery-side {
     display: none;
   }
 }

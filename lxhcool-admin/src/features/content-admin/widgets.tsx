@@ -20,7 +20,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   CalendarDays,
   GripVertical,
-  Image,
   Link2,
   Music2,
   Quote,
@@ -93,18 +92,13 @@ const widgetTypes: {
     template: { showTime: true, siteStartDate: '' },
     icon: CalendarDays,
   },
-  {
-    value: 'PHOTO_GALLERY',
-    label: '照片墙',
-    description: '展示一组图片。',
-    template: { images: [] },
-    icon: Image,
-  },
 ]
 
 const typeLabels = Object.fromEntries(
   widgetTypes.map((item) => [item.value, item.label])
 ) as Record<WidgetType, string>
+
+const standaloneWidgetTypes = new Set<WidgetType>(['PHOTO_GALLERY'])
 
 type ActiveDrag =
   | { kind: 'palette'; type: WidgetType }
@@ -341,9 +335,11 @@ export function WidgetsPage() {
   if (removeWidget.isError) throw removeWidget.error
   if (updateWidget.isError) throw updateWidget.error
 
-  const rows = [...(widgets.data ?? [])].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.updatedAt.localeCompare(b.updatedAt)
-  )
+  const rows = [...(widgets.data ?? [])]
+    .filter((widget) => !standaloneWidgetTypes.has(widget.type))
+    .sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.updatedAt.localeCompare(b.updatedAt)
+    )
   const leftWidgets = rows.filter((widget) => widget.area === 'LEFT')
   const rightWidgets = rows.filter((widget) => widget.area === 'RIGHT')
   const usedTypes = new Set(rows.map((widget) => widget.type))

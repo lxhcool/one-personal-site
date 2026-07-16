@@ -1,6 +1,7 @@
 import {
   FileText,
   FolderKanban,
+  Images,
   LayoutDashboard,
   Link as LinkIcon,
   MessageCircle,
@@ -79,6 +80,11 @@ export const sidebarData: SidebarData = {
           title: '音乐播放器',
           url: '/music',
           icon: Music2,
+        },
+        {
+          title: '照片墙',
+          url: '/gallery',
+          icon: Images,
         },
         {
           title: '友链',
