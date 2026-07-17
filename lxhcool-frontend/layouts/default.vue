@@ -76,7 +76,6 @@ const widgets = computed(() => {
   if (isLoggedIn.value) return all;
   return all.filter((w) => !getStrategy(w.type).requiresAuth);
 });
-const leftWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'LEFT'));
 const rightWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'RIGHT'));
 const photoGalleryWidget = computed(() =>
   rightWidgets.value.find((widget) => widget.type === 'PHOTO_GALLERY'),
@@ -86,11 +85,6 @@ const photoGalleryNormalized = computed(() =>
     ? getStrategy(photoGalleryWidget.value.type).normalize(photoGalleryWidget.value.config)
     : {},
 );
-const shellClass = computed(() => ({
-  'has-left': leftWidgets.value.length > 0,
-  'has-right': rightWidgets.value.length > 0,
-}));
-
 function applyTheme() {
   if (import.meta.server) return;
   document.documentElement.dataset.theme = theme.value;
@@ -99,7 +93,7 @@ function applyTheme() {
 </script>
 
 <template>
-  <div class="absolute top-[1.625rem] left-[1.875rem] rounded-lg p-3 z-10 flex flex-col gap-y-2" style="transform: matrix(0.799513, -0.04, 0.04, 0.799513, 0, 0) translate(-58px, -88px)">
+  <div class="fixed top-[1.625rem] left-[1.875rem] rounded-lg p-3 z-10 flex flex-col gap-y-2" style="transform: matrix(0.799513, -0.04, 0.04, 0.799513, 0, 0) translate(-58px, -88px)">
     <template v-for="(item, idx) in flatTree" :key="idx">
       <div
         class="tree-item flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap text-[hsl(212,20%,23%)]"
@@ -110,7 +104,7 @@ function applyTheme() {
       </div>
     </template>
   </div>
-  <div class="site-shell" :class="shellClass">
+  <div class="site-shell">
     <main class="content-column">
       <slot />
     </main>
@@ -145,24 +139,6 @@ function applyTheme() {
   padding: 24px 0;
 }
 
-.site-shell.has-left {
-  grid-template-columns: var(--left-column) var(--center-column);
-  width: calc(var(--left-column) + var(--center-column) + var(--shell-gap));
-}
-
-.site-shell.has-right {
-  grid-template-columns: var(--center-column) var(--right-column);
-  width: calc(var(--center-column) + var(--right-column) + var(--shell-gap));
-}
-
-.site-shell.has-left.has-right {
-  grid-template-columns: var(--left-column) var(--center-column) var(--right-column);
-  width: calc(
-    var(--left-column) + var(--center-column) + var(--right-column) +
-      var(--shell-gap) * 2
-  );
-}
-
 .shell-column {
   display: grid;
   align-content: start;
@@ -183,14 +159,11 @@ function applyTheme() {
 
 .content-column :deep(main) {
   min-height: 320px;
-  padding: 24px;
+  padding: 0;
 }
 
 @media (max-width: 1220px) {
-  .site-shell,
-  .site-shell.has-left,
-  .site-shell.has-right,
-  .site-shell.has-left.has-right {
+  .site-shell {
     grid-template-columns: minmax(0, var(--center-column));
     justify-content: center;
     width: var(--center-column);
@@ -203,10 +176,7 @@ function applyTheme() {
 }
 
 @media (max-width: 680px) {
-  .site-shell,
-  .site-shell.has-left,
-  .site-shell.has-right,
-  .site-shell.has-left.has-right {
+  .site-shell {
     max-width: none;
     width: 100%;
     padding: 12px;

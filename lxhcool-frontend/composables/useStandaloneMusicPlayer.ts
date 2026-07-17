@@ -40,7 +40,7 @@ interface Track {
 function normalizeTrack(track: Record<string, unknown>, baseUrl: string): Track {
   const title = readString(track, 'title') || 'Music';
   const artist = readString(track, 'artist') || 'Unknown artist';
-  const audioUrl = resolveAssetUrl(readString(track, 'audioUrl'), baseUrl);
+  const audioUrl = resolveAssetUrl(readString(track, 'audioUrl'), baseUrl).replace(/^http:\/\//i, 'https://');
   const embedUrl = readString(track, 'embedUrl');
   const externalUrl = readString(track, 'externalUrl');
   const cover = resolveAssetUrl(readString(track, 'cover') || readString(track, 'coverUrl'), baseUrl);
@@ -112,35 +112,8 @@ export function useStandaloneMusicPlayer() {
   // ========== 播放模式 ==========
   type PlayMode = 'sequential' | 'shuffle' | 'repeat' | 'repeat-one';
   const playMode = ref<PlayMode>('sequential');
-  const volume = ref(0.4);
+  const volume = ref(0.65);
   const isMuted = ref(false);
-
-  // Web Audio API
-  let audioCtx: AudioContext | null = null;
-  let gainNode: GainNode | null = null;
-
-  async function ensureAudioContext() {
-    if (!audioCtx) {
-      audioCtx = new AudioContext();
-      gainNode = audioCtx.createGain();
-      gainNode.connect(audioCtx.destination);
-      gainNode.gain.value = isMuted.value ? 0 : volume.value;
-    }
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-  }
-
-  async function connectAudioToGain(audio: HTMLAudioElement) {
-    await ensureAudioContext();
-    if (!audioCtx || !gainNode) return;
-    try {
-      const source = audioCtx.createMediaElementSource(audio);
-      source.connect(gainNode);
-    } catch {
-      // already connected or not supported
-    }
-  }
 
   const playModeLabel = computed(() => {
     const map: Record<PlayMode, string> = { sequential: '顺序', shuffle: '随机', repeat: '循环', 'repeat-one': '单曲' };
@@ -156,15 +129,12 @@ export function useStandaloneMusicPlayer() {
   function setVolume(v: number) {
     volume.value = Math.max(0, Math.min(1, v));
     isMuted.value = volume.value === 0;
-    if (gainNode) gainNode.gain.value = volume.value;
-    if (audioRef.value) audioRef.value.volume = volume.value;
+    syncVolume();
   }
 
   function toggleMute() {
     isMuted.value = !isMuted.value;
-    const targetVol = isMuted.value ? 0 : volume.value;
-    if (gainNode) gainNode.gain.value = targetVol;
-    if (audioRef.value) audioRef.value.volume = targetVol;
+    syncVolume();
   }
 
   // ========== 播放状态 ==========
@@ -176,6 +146,7 @@ export function useStandaloneMusicPlayer() {
   const progressRatio = ref(0);
   const currentTimeLabel = ref('0:00');
   const durationLabel = ref('0:00');
+  const playbackError = ref('');
   const simulatedCurrentTime = ref(0);
   let progressTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -229,11 +200,23 @@ export function useStandaloneMusicPlayer() {
     if (!track) { activeEmbedUrl.value = ''; isPlaying.value = false; syncProgressTimer(); return; }
     if (track.audioUrl && audioRef.value) {
       activeEmbedUrl.value = '';
-      if (isPlaying.value) await audioRef.value.play(); else audioRef.value.pause();
+      syncVolume();
+      if (isPlaying.value) {
+        try {
+          await audioRef.value.play();
+          playbackError.value = '';
+        } catch (error) {
+          isPlaying.value = false;
+          playbackError.value = error instanceof Error ? `播放失败：${error.message}` : '播放失败，请重试';
+        }
+      } else {
+        audioRef.value.pause();
+      }
       syncProgressTimer(); return;
     }
     if (track.embedUrl) {
       activeEmbedUrl.value = isPlaying.value ? withAutoplay(track.embedUrl) : '';
+      playbackError.value = '';
       syncProgressTimer();
     }
   }
@@ -241,7 +224,7 @@ export function useStandaloneMusicPlayer() {
   // ── 控制方法 ──
   async function toggleMusic() {
     if (!currentTrack.value) return;
-    await ensureAudioContext();
+    playbackError.value = '';
     isPlaying.value = !isPlaying.value;
   }
 
@@ -294,7 +277,13 @@ export function useStandaloneMusicPlayer() {
   }
 
   function selectPlaylistTrack(index: number) {
+    playbackError.value = '';
     playlistIndex.value = index; isPlaying.value = true; isPlaylistOpen.value = false;
+  }
+
+  function handleAudioError() {
+    isPlaying.value = false;
+    playbackError.value = '音频加载失败，请选择其他歌曲或稍后重试';
   }
 
   function seekTo(ratio: number) {
@@ -324,17 +313,35 @@ export function useStandaloneMusicPlayer() {
 
   // 音量同步
   function syncVolume() {
-    const targetVol = isMuted.value ? 0 : volume.value;
-    if (gainNode) gainNode.gain.value = targetVol;
-    if (audioRef.value) audioRef.value.volume = targetVol;
+    if (!audioRef.value) return;
+    audioRef.value.volume = volume.value;
+    audioRef.value.muted = isMuted.value;
   }
   watch(audioRef, (el) => {
     if (el) {
-      el.volume = isMuted.value ? 0 : volume.value;
-      void connectAudioToGain(el);
+      el.volume = volume.value;
+      el.muted = isMuted.value;
     }
   });
-  watch([volume, isMuted], () => syncVolume());
+  watch([volume, isMuted], () => {
+    syncVolume();
+    if (import.meta.client) {
+      window.localStorage.setItem('standalone-music-volume', String(volume.value));
+      window.localStorage.setItem('standalone-music-muted', String(isMuted.value));
+    }
+  });
+
+  onMounted(() => {
+    const savedVolume = Number(window.localStorage.getItem('standalone-music-volume'));
+    const savedMuted = window.localStorage.getItem('standalone-music-muted');
+    if (Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1) {
+      volume.value = savedVolume;
+    }
+    if (savedMuted === 'true' || savedMuted === 'false') {
+      isMuted.value = savedMuted === 'true';
+    }
+    syncVolume();
+  });
 
   watch(() => playlist.value.length, () => {
     if (playlistIndex.value >= playlist.value.length) playlistIndex.value = 0;
@@ -342,19 +349,18 @@ export function useStandaloneMusicPlayer() {
 
   onBeforeUnmount(() => {
     if (progressTimer) clearInterval(progressTimer);
-    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; gainNode = null; }
   });
 
   const isLoading = computed(() => status.value === 'pending');
 
   return {
-    audioRef, activeEmbedUrl, isPlaying, isPlaylistOpen, playlistIndex,
+    audioRef, activeEmbedUrl, isPlaying, isPlaylistOpen, playlistIndex, playbackError,
     progressRatio, currentTimeLabel, durationLabel,
     playlist, currentTrack, displayTitle, displayArtist,
     isLoading,
     playMode, playModeLabel, volume, isMuted,
     toggleMusic, playPreviousTrack, playNextTrack, selectPlaylistTrack,
     togglePlayMode, setVolume, toggleMute,
-    updateAudioProgress, seekTo, formatTime,
+    updateAudioProgress, seekTo, formatTime, handleAudioError,
   };
 }

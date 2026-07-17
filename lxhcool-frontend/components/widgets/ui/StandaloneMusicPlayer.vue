@@ -6,9 +6,11 @@ const {
   audioRef, activeEmbedUrl, isPlaying, playlistIndex,
   playlist, currentTrack, displayTitle, displayArtist,
   playMode, playModeLabel, volume, isMuted,
+  playbackError,
   toggleMusic, playPreviousTrack, playNextTrack, selectPlaylistTrack,
   togglePlayMode, setVolume, toggleMute,
   updateAudioProgress, seekTo, progressRatio, currentTimeLabel, durationLabel,
+  handleAudioError,
 } = useStandaloneMusicPlayer();
 </script>
 
@@ -48,6 +50,7 @@ const {
             max="1"
             step="0.05"
             :value="isMuted ? 0 : volume"
+            :title="`音量 ${Math.round((isMuted ? 0 : volume) * 100)}%`"
             @input="setVolume(($event.target as HTMLInputElement).valueAsNumber)"
           />
           <button
@@ -73,6 +76,8 @@ const {
         </div>
         <span class="prog-time">{{ durationLabel }}</span>
       </div>
+
+      <p v-if="playbackError" class="player-error" role="status">{{ playbackError }}</p>
 
       <!-- 播放列表 -->
       <div class="playlist">
@@ -109,6 +114,7 @@ const {
         @loadedmetadata="updateAudioProgress"
         @timeupdate="updateAudioProgress"
         @ended="playNextTrack"
+        @error="handleAudioError"
       />
       <iframe
         v-if="activeEmbedUrl"
@@ -231,6 +237,13 @@ const {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.player-error {
+  margin: -2px 0 0;
+  color: #9a5d58;
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 .prog-time {

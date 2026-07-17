@@ -1,24 +1,16 @@
 <script setup lang="ts">
-import { Heart, MessageCircle } from '@lucide/vue';
 import { listPublicPosts } from '~/entities/post/api/postApi';
-import { listPublicProjects } from '~/entities/project/api/projectApi';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import MomentMusicCard from '~/components/moments/MomentMusicCard.vue';
 
 const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
-const { data: homeData } = await useAsyncData('home', async () => {
-  const [posts, projects] = await Promise.all([
-    listPublicPosts('MOMENT'),
-    listPublicProjects({ featured: true }),
-  ]);
-  return { posts, projects };
-});
+const { data: postsData } = await useAsyncData('home-moments', () => listPublicPosts('MOMENT'));
 
-const home = computed(() => {
-  if (!homeData.value) {
-    throw createError({ statusCode: 500, statusMessage: 'Failed to load home data' });
+const posts = computed(() => {
+  if (!postsData.value) {
+    throw createError({ statusCode: 500, statusMessage: 'Failed to load moments' });
   }
-  return homeData.value;
+  return postsData.value;
 });
 
 function resolveAssetUrl(url?: string | null) {
@@ -38,9 +30,7 @@ function readMediaObject(media: Record<string, unknown>, key: string) {
 function getMomentMusic(media: Record<string, unknown>) {
   const nested = readMediaObject(media, 'music');
   if (Object.keys(nested).length > 0) return nested;
-  return readMediaString(media, 'audioUrl') ||
-    readMediaString(media, 'artist') ||
-    readMediaString(media, 'embedUrl')
+  return readMediaString(media, 'audioUrl') || readMediaString(media, 'artist') || readMediaString(media, 'embedUrl')
     ? media
     : {};
 }
@@ -75,84 +65,34 @@ function resolveVideoEmbedUrl(url?: string | null) {
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-}
-
-function postSlug(post: { publishedAt?: string | null }, idx: number): string {
-  if (post.publishedAt) {
-    const d = new Date(post.publishedAt);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(idx + 1)}`;
-  }
-  return `post-${idx + 1}`;
+  if (!value) return 'unknown-time';
+  const date = new Date(value);
+  const pad = (number: number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 </script>
 
 <template>
-  <main class="home-page">
-    <!-- ====== Terminal Container ====== -->
-    <section class="terminal">
-      <!-- Header bar -->
-      <div class="term-bar">
-        <span class="tb-dots">
-          <span class="tb-dot tb-close"></span>
-          <span class="tb-dot tb-min"></span>
-          <span class="tb-dot tb-max"></span>
-        </span>
-        <span class="tb-title">lxhcool@site — ~/posts — bash</span>
-        <span class="tb-spacer"></span>
-      </div>
+  <main>
+    <WorkbenchWindow path="~/moments" :status="`${posts.length} logs`">
+      <section class="terminal-feed" aria-label="动态日志">
+        <header class="terminal-session">
+          <p class="terminal-line terminal-muted">Last sync: {{ formatDate(new Date().toISOString()) }}</p>
+          <p class="terminal-line"><span class="prompt">~/moments $</span> tail -f moments.log</p>
+        </header>
 
-      <!-- Body -->
-      <div class="term-body">
-        <!-- Session init -->
-        <p class="term-line term-dim">
-          Last login: {{ formatDate(new Date().toISOString()) }} on ttys001
-        </p>
-        <p class="term-line">
-          <span class="prompt">~/posts $</span>
-          <span class="cmd">ls -lt *.md</span>
-        </p>
-        <p class="term-line term-dim" v-if="home.posts.length > 0">
-          <template v-for="(post, idx) in home.posts" :key="post.id">
-            {{ postSlug(post, idx) }}.md<br v-if="idx < home.posts.length - 1" />
-          </template>
-        </p>
+        <div v-if="posts.length" class="log-list">
+          <article v-for="post in posts" :key="post.id" class="log-entry">
+            <header class="log-meta">
+              <time :datetime="post.publishedAt || post.createdAt">[{{ formatDate(post.publishedAt || post.createdAt) }}]</time>
+              <span>{{ post.category || 'moment' }}</span>
+            </header>
 
-        <!-- Empty -->
-        <template v-if="home.posts.length === 0">
-          <p class="term-line">
-            <span class="prompt">~/posts $</span>
-            <span class="cmd">cat *.md</span>
-          </p>
-          <p class="term-line term-dim">cat: no posts found</p>
-        </template>
+            <h2 v-if="post.title">{{ post.title }}</h2>
 
-        <!-- Each post as cat output -->
-        <template v-for="(post, idx) in home.posts" :key="post.id">
-          <p class="term-line" :style="{ marginTop: idx === 0 ? '12px' : '20px' }">
-            <span class="prompt">~/posts $</span>
-            <span class="cmd">cat {{ postSlug(post, idx) }}.md</span>
-          </p>
-          <div class="term-divider"></div>
-
-          <!-- Content block -->
-          <div class="term-output">
-            <p class="term-text">{{ post.title }}</p>
-
-            <!-- Photos -->
             <div
-              v-if="readMediaStringArray(post.media, 'photos').length > 0"
-              :class="[
-                'term-photos',
-                readMediaStringArray(post.media, 'photos').length === 1 ? 'term-photos--single' : '',
-              ]"
+              v-if="readMediaStringArray(post.media, 'photos').length"
+              class="log-photos"
             >
               <img
                 v-for="photo in readMediaStringArray(post.media, 'photos')"
@@ -163,19 +103,16 @@ function postSlug(post: { publishedAt?: string | null }, idx: number): string {
               />
             </div>
 
-            <!-- Music -->
             <MomentMusicCard
               v-if="readMediaString(getMomentMusic(post.media), 'audioUrl') || readMediaString(getMomentMusic(post.media), 'embedUrl') || readMediaString(getMomentMusic(post.media), 'externalUrl')"
               :music="getMomentMusic(post.media)"
               :fallback-photo="readMediaStringArray(post.media, 'photos')[0]"
             />
 
-            <!-- Video -->
             <div
-              v-if="readMediaString(getMomentVideo(post.media), 'videoUrl') || readMediaString(getMomentVideo(post.media), 'embedUrl') || readMediaString(getMomentVideo(post.media), 'externalUrl')"
-              class="term-video"
+              v-if="readMediaString(getMomentVideo(post.media), 'videoUrl') || readMediaString(getMomentVideo(post.media), 'embedUrl')"
+              class="log-video"
             >
-              <span class="term-dim">▶ {{ readMediaString(getMomentVideo(post.media), 'title') || 'video' }}</span>
               <video
                 v-if="readMediaString(getMomentVideo(post.media), 'videoUrl')"
                 :src="resolveAssetUrl(readMediaString(getMomentVideo(post.media), 'videoUrl'))"
@@ -183,9 +120,9 @@ function postSlug(post: { publishedAt?: string | null }, idx: number): string {
                 preload="metadata"
               />
               <iframe
-                v-else-if="readMediaString(getMomentVideo(post.media), 'embedUrl')"
+                v-else
                 :src="resolveVideoEmbedUrl(readMediaString(getMomentVideo(post.media), 'embedUrl'))"
-                title="Video player"
+                title="视频播放器"
                 loading="lazy"
                 frameborder="0"
                 allow="fullscreen; encrypted-media; picture-in-picture"
@@ -193,314 +130,93 @@ function postSlug(post: { publishedAt?: string | null }, idx: number): string {
               />
             </div>
 
-            <!-- Footer -->
-            <footer class="term-footer">
-              <time v-if="post.publishedAt" :datetime="post.publishedAt" class="term-time">
-                {{ formatDate(post.publishedAt) }}
-              </time>
-              <span class="term-sep">·</span>
-              <button type="button" class="term-action" aria-label="Like">
-                <Heart :size="12" stroke-width="1.8" />
-              </button>
-              <button type="button" class="term-action" aria-label="Comment">
-                <MessageCircle :size="12" stroke-width="1.8" />
-              </button>
-            </footer>
-          </div>
-        </template>
+          </article>
+        </div>
 
-        <!-- Blinking cursor -->
-        <p class="term-line term-cursor">
-          <span class="prompt">~/posts $</span>
-          <span class="blink">▊</span>
+        <p v-else class="terminal-empty">moments.log is empty</p>
+
+        <p class="terminal-line terminal-cursor" aria-hidden="true">
+          <span class="prompt">~/moments $</span><span class="cursor-block" />
         </p>
-      </div>
-    </section>
-
-    <!-- ====== Projects ====== -->
-    <section v-if="home.projects.length > 0" class="term-projects">
-      <p class="term-line term-dim">~/projects $ ls</p>
-      <ul class="proj-list">
-        <li v-for="project in home.projects" :key="project.id">
-          <NuxtLink :to="`/projects/${project.slug}`">{{ project.title }}</NuxtLink>
-        </li>
-      </ul>
-    </section>
+      </section>
+    </WorkbenchWindow>
   </main>
 </template>
 
 <style scoped>
-/* ── 页面布局 ── */
-.home-page {
-  display: grid;
-  gap: 20px;
+.terminal-feed {
+  color: #46535c;
+  font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.72;
 }
 
-/* ================================================
-   Terminal Container
-   ================================================ */
-.terminal {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.65;
-  color: #3a4654;
+.terminal-session {
+  padding-bottom: 18px;
+  border-bottom: 1px dashed rgba(89, 78, 62, 0.16);
 }
 
-/* ── Terminal Header Bar ── */
-.term-bar {
+.terminal-line { margin: 0; }
+.terminal-line + .terminal-line { margin-top: 3px; }
+.terminal-muted { color: #90979a; }
+.prompt { margin-right: 8px; color: #328066; font-weight: 700; }
+
+.log-entry {
+  padding: 16px 0;
+  border-bottom: 1px dashed rgba(89, 78, 62, 0.22);
+}
+
+.log-meta {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  user-select: none;
+  margin-bottom: 9px;
+  color: #8b9397;
+  font-size: 8px;
+  text-transform: uppercase;
 }
 
-.tb-dots {
-  display: flex;
-  gap: 7px;
-  flex-shrink: 0;
-}
+.log-meta span { color: #328066; }
+.log-entry h2 { margin: 0; color: #35414a; font-family: Apfel Grotezk, sans-serif; font-size: 16px; letter-spacing: -0.025em; line-height: 1.35; }
 
-.tb-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-}
-
-.tb-close {
-  background: #ff5f57;
-}
-
-.tb-min {
-  background: #febc2e;
-}
-
-.tb-max {
-  background: #28c840;
-}
-
-.tb-title {
-  flex: 1;
-  text-align: center;
-  font-size: 11px;
-  color: #8a94a6;
-  letter-spacing: 0.3px;
-}
-
-.tb-spacer {
-  width: 48px;
-  flex-shrink: 0;
-}
-
-/* ── Terminal Body ── */
-.term-body {
-  padding: 16px 18px 14px;
-  overflow-x: auto;
-}
-
-/* ── Terminal Lines ── */
-.term-line {
-  margin: 0;
-  white-space: nowrap;
-}
-
-.term-dim {
-  color: #9ca3af;
-}
-
-/* ── Prompt ── */
-.prompt {
-  color: #059669;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.cmd {
-  color: #7c3aed;
-}
-
-/* ── Divider ── */
-.term-divider {
-  height: 1px;
-  margin: 6px 0 10px;
-  background: repeating-linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.08) 0,
-    rgba(0, 0, 0, 0.08) 4px,
-    transparent 4px,
-    transparent 8px
-  );
-}
-
-/* ── Post Content Block ── */
-.term-output {
-  padding-left: 0;
-}
-
-.term-text {
-  margin: 0 0 12px;
-  color: #1f2937;
-  font-size: 13px;
-  line-height: 1.75;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* ── Photos ── */
-.term-photos {
+.log-photos {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 100px);
   gap: 4px;
-  margin-bottom: 12px;
-  border-radius: 4px;
-  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 15px;
 }
 
-.term-photos--single {
-  grid-template-columns: 1fr;
-}
-
-.term-photos img {
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  border-radius: 3px;
+.log-photos img {
+  width: 100px;
+  height: 100px;
+  border-radius: 5px;
   object-fit: cover;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.term-photos img:hover {
-  opacity: 0.85;
+.terminal-feed :deep(.moment-music-card) {
+  margin-top: 15px;
 }
 
-.term-photos--single img {
-  aspect-ratio: 16 / 9;
+.log-video { width: 360px; max-width: 100%; aspect-ratio: 16 / 9; margin-top: 15px; overflow: hidden; border-radius: 5px; background: #252b2f; }
+.log-video video,
+.log-video iframe { display: block; width: 100%; height: 100%; border: 0; }
+.log-video video { object-fit: cover; }
+
+.terminal-empty { margin: 0; padding: 55px 0; color: #8b9397; text-align: center; }
+.terminal-cursor { margin-top: 20px; }
+.cursor-block { display: inline-block; width: 6px; height: 11px; background: #328066; vertical-align: -2px; animation: cursor-blink 1s step-end infinite; }
+
+@keyframes cursor-blink { 50% { opacity: 0; } }
+
+@media (max-width: 560px) {
+  .terminal-feed { font-size: 10px; }
+  .log-entry { padding-block: 14px; }
+  .log-photos { grid-template-columns: repeat(2, 100px); }
 }
 
-/* ── Video ── */
-.term-video {
-  margin-bottom: 12px;
-}
-
-.term-video video,
-.term-video iframe {
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  border-radius: 4px;
-  background: #000;
-  margin-top: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-/* ── Footer ── */
-.term-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-  color: #9ca3af;
-  font-size: 11px;
-}
-
-.term-time {
-  color: #9ca3af;
-}
-
-.term-sep {
-  color: #d1d5db;
-}
-
-.term-action {
-  display: inline-flex;
-  align-items: center;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 2px 4px;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.term-action:hover {
-  color: #374151;
-  background: rgba(0, 0, 0, 0.04);
-}
-
-/* ── Blinking Cursor ── */
-.term-cursor {
-  margin-top: 16px;
-}
-
-.blink {
-  color: #059669;
-  animation: term-blink 1s step-end infinite;
-}
-
-@keyframes term-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-/* ================================================
-   Projects section (also terminal-styled)
-   ================================================ */
-.term-projects {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.65;
-  color: #3a4654;
-  padding: 0;
-}
-
-.proj-list {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.proj-list li {
-  margin: 0;
-}
-
-.proj-list a {
-  display: inline-block;
-  color: #7c3aed;
-  text-decoration: none;
-  padding: 3px 6px;
-  margin: -3px -6px;
-  border-radius: 3px;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.proj-list a:hover {
-  background: rgba(124, 58, 237, 0.08);
-  color: #6d28d9;
-}
-
-/* ================================================
-   Responsive
-   ================================================ */
-@media (max-width: 680px) {
-  .term-body {
-    padding: 12px 14px 10px;
-  }
-
-  .terminal {
-    font-size: 12px;
-  }
-
-  .term-photos {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .term-text {
-    font-size: 12px;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .cursor-block { animation: none; }
 }
 </style>

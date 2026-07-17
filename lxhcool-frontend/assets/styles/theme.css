@@ -8,9 +8,12 @@
   --accent: #111827;
   --accent-foreground: #ffffff;
   --hover-bg: #f3f4f6;
+  --paper-surface: rgba(235, 228, 215, 0.28);
+  --paper-surface-soft: rgba(225, 217, 203, 0.34);
+  --paper-border: rgba(105, 91, 72, 0.24);
   --radius: 14px;
   --left-column: 260px;
-  --center-column: 600px;
+  --center-column: 680px;
   --right-column: 260px;
   --shell-gap: 20px;
 }
@@ -39,9 +42,9 @@ body::before {
   left: 50%;
   width: 75rem;
   height: 56.25rem;
-  background-color: rgba(240, 242, 244, 0.72);
+  background-color: rgba(221, 210, 193, 0.38);
   border-radius: 50%;
-  filter: blur(8rem);
+  filter: blur(10rem);
   transform: matrix(0.891007, 0.45399, -0.45399, 0.891007, -600, -450);
   pointer-events: none;
   z-index: 0;
@@ -61,17 +64,4 @@ button {
   border-radius: var(--radius);
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
-}
-
-.page-enter-active,
-.page-leave-active {
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-.page-enter-from,
-.page-leave-to {
-  opacity: 0;
-  transform: translateY(4px);
 }
