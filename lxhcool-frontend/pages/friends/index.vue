@@ -13,9 +13,8 @@ function initials(name: string) { return name.trim().slice(0, 2).toUpperCase(); 
 
 <template>
   <main>
-    <WorkbenchWindow path="~/friends" :status="`${friendLinks.length} contacts`" title="桌面通讯录">
-      <template #eyebrow>people on the web</template>
-      <template #headingAside>去看看他们正在创造什么</template>
+    <WorkbenchWindow path="~/friends" :status="`${friendLinks.length} contacts`">
+      <p class="friend-command"><span>~/friends $</span> ls contacts/</p>
 
       <div v-if="friendLinks.length" class="friend-grid">
         <a v-for="friend in friendLinks" :key="friend.id" :href="friend.url" target="_blank" rel="noreferrer" class="friend-card">
@@ -37,6 +36,8 @@ function initials(name: string) { return name.trim().slice(0, 2).toUpperCase(); 
 </template>
 
 <style scoped>
+.friend-command { margin: 0 0 21px; color: #858e95; font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+.friend-command span { color: #328066; }
 .friend-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 11px; }
 .friend-card { position: relative; display: grid; grid-template-columns: 44px minmax(0,1fr) 15px; gap: 12px; align-items: center; min-height: 104px; padding: 15px; overflow: hidden; border: 1px solid rgba(105,91,72,.12); border-radius: 7px; background: rgba(238,233,223,.64); transition: transform 150ms ease, background 150ms ease; }
 .friend-card:nth-child(3n+2) { transform: rotate(.35deg); }.friend-card:nth-child(3n) { transform: rotate(-.25deg); }.friend-card:hover { z-index: 1; transform: translateY(-2px) rotate(0); background: rgba(243,238,228,.86); }

@@ -14,11 +14,9 @@ defineProps<{
         <span class="control control-minimize" />
         <span class="control control-expand" />
       </span>
-      <span class="window-path">lxhcool@desk:{{ path }}</span>
+      <SiteCommandNav />
       <span class="window-status">{{ status || 'online' }}</span>
     </header>
-
-    <SiteCommandNav />
 
     <div class="window-content">
       <header v-if="title || $slots.eyebrow" class="content-heading">
@@ -36,6 +34,10 @@ defineProps<{
 <style scoped>
 .workbench-window {
   position: relative;
+  display: flex;
+  min-height: calc(100vh - 24px);
+  min-height: calc(100dvh - 24px);
+  flex-direction: column;
   isolation: isolate;
   overflow: clip;
   border: 1px solid var(--paper-border);
@@ -53,10 +55,10 @@ defineProps<{
 
 .window-bar {
   display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) 82px;
+  grid-template-columns: 72px minmax(0, 1fr) 82px;
   align-items: center;
-  min-height: 38px;
-  padding: 0 13px;
+  min-height: 42px;
+  padding: 0 12px;
   border-bottom: 1px solid rgba(105, 91, 72, 0.12);
   background:
     linear-gradient(180deg, rgba(247, 241, 230, 0.58), rgba(211, 204, 192, 0.42)),
@@ -82,16 +84,6 @@ defineProps<{
 .control-minimize { background: #d8b15d; }
 .control-expand { background: #6eaa79; }
 
-.window-path {
-  overflow: hidden;
-  color: #65707a;
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .window-status {
   color: #87919a;
   font-size: 9px;
@@ -113,6 +105,7 @@ defineProps<{
 }
 
 .window-content {
+  flex: 1;
   padding: 30px 32px 34px;
 }
 
@@ -143,8 +136,12 @@ defineProps<{
 }
 
 @media (max-width: 680px) {
-  .workbench-window { border-radius: 9px; }
-  .window-bar { grid-template-columns: 58px minmax(0, 1fr) 58px; padding: 0 10px; }
+  .workbench-window {
+    min-height: calc(100vh - 12px);
+    min-height: calc(100dvh - 12px);
+    border-radius: 9px;
+  }
+  .window-bar { grid-template-columns: 54px minmax(0, 1fr) 40px; padding: 0 8px; }
   .window-status { font-size: 0; }
   .window-content { padding: 24px 19px 28px; }
   .content-heading { align-items: start; margin-bottom: 22px; }

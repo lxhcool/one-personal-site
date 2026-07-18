@@ -16,10 +16,7 @@ function formatDate(value?: string | null) {
 
 <template>
   <main>
-    <WorkbenchWindow path="~/articles" :status="`${posts.length} files`" title="文章归档">
-      <template #eyebrow>long-form notes</template>
-      <template #headingAside>按时间倒序</template>
-
+    <WorkbenchWindow path="~/articles" :status="`${posts.length} files`">
       <p class="archive-command"><span>~/articles $</span> find . -name "*.md" -print</p>
 
       <div v-if="posts.length" class="archive-list">

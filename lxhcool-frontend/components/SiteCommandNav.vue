@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const route = useRoute();
 const items = [
-  { label: '动态', command: 'moments', to: '/' },
-  { label: '文章', command: 'articles', to: '/blog' },
-  { label: '友链', command: 'friends', to: '/friends' },
+  { label: '动态.log', to: '/' },
+  { label: '文章.md', to: '/blog' },
+  { label: '友链.link', to: '/friends' },
 ];
 
 function isActive(to: string) {
@@ -13,78 +13,107 @@ function isActive(to: string) {
 </script>
 
 <template>
-  <nav class="command-nav" aria-label="主要导航">
-    <span class="nav-prompt" aria-hidden="true">~/desk $ open</span>
+  <nav class="file-tabs" aria-label="主要导航">
     <NuxtLink
       v-for="item in items"
       :key="item.to"
       :to="item.to"
-      class="nav-link"
+      class="file-tab"
       :class="{ active: isActive(item.to) }"
     >
+      <span class="file-status" aria-hidden="true" />
       <span>{{ item.label }}</span>
-      <small>{{ item.command }}</small>
     </NuxtLink>
   </nav>
 </template>
 
 <style scoped>
-.command-nav {
+.file-tabs {
   display: flex;
+  height: 42px;
+  min-width: 0;
   align-items: stretch;
-  min-height: 48px;
-  padding: 0 14px;
-  border-bottom: 1px solid rgba(105, 91, 72, 0.1);
-  background: rgba(225, 218, 205, 0.32);
-  font-family: 'IBM Plex Mono', monospace;
+  justify-content: center;
+  gap: 1px;
+  padding: 0;
+  overflow-x: auto;
+  border: 0;
+  background: transparent;
+  scrollbar-width: none;
 }
 
-.nav-prompt {
-  display: flex;
-  align-items: center;
-  margin-right: auto;
-  padding: 0 12px 0 2px;
-  color: #89929a;
-  font-size: 10px;
-  white-space: nowrap;
+.file-tabs::-webkit-scrollbar {
+  display: none;
 }
 
-.nav-link {
+.file-tab {
   position: relative;
-  display: grid;
-  place-content: center;
-  min-width: 64px;
-  padding: 6px 10px 5px;
-  color: #7c858c;
-  text-align: center;
-  transition: color 140ms ease, background 140ms ease;
+  display: inline-flex;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 0;
+  color: #7e878c;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.015em;
+  transition: color 130ms ease, background 130ms ease, transform 130ms ease;
 }
 
-.nav-link span { font-size: 11px; font-weight: 700; }
-.nav-link small { margin-top: 1px; font-size: 7px; letter-spacing: 0.05em; opacity: 0.62; }
+.file-status {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  border-radius: 50%;
+  background: #a2a9a7;
+  opacity: 0.42;
+  transition: background 130ms ease, box-shadow 130ms ease, opacity 130ms ease;
+}
 
-.nav-link::after {
+.file-tab:hover {
+  background: rgba(235, 228, 215, 0.24);
+  color: #535f66;
+}
+
+.file-tab.active {
+  background: rgba(235, 228, 215, 0.34);
+  color: #3f4b52;
+  transform: none;
+}
+
+.file-tab.active::after {
   position: absolute;
-  right: 12px;
-  bottom: -1px;
-  left: 12px;
+  bottom: 0;
+  left: 50%;
+  width: 20px;
   height: 2px;
   border-radius: 2px 2px 0 0;
-  background: #6751ad;
+  background: rgba(77, 154, 117, 0.62);
   content: '';
-  opacity: 0;
-  transform: scaleX(0.5);
-  transition: opacity 140ms ease, transform 140ms ease;
+  transform: translateX(-50%);
 }
 
-.nav-link:hover,
-.nav-link.active { color: #35414a; background: rgba(77, 86, 94, 0.035); }
-.nav-link.active::after { opacity: 1; transform: scaleX(1); }
-.nav-link:focus-visible { outline: 2px solid rgba(103, 81, 173, 0.35); outline-offset: -3px; }
+.file-tab.active .file-status {
+  background: #4d9a75;
+  box-shadow: 0 0 0 3px rgba(77, 154, 117, 0.1);
+  opacity: 1;
+}
+
+.file-tab:focus-visible {
+  outline: 2px solid rgba(77, 154, 117, 0.3);
+  outline-offset: -3px;
+}
 
 @media (max-width: 560px) {
-  .command-nav { overflow-x: auto; padding: 0 6px; }
-  .nav-prompt { display: none; }
-  .nav-link { flex: 1 0 62px; min-width: 62px; padding-inline: 6px; }
+  .file-tabs { height: 42px; justify-content: start; }
+  .file-tab { height: 42px; padding-inline: 8px; font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file-tab,
+  .file-status { transition: none; }
 }
 </style>

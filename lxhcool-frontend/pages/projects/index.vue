@@ -11,10 +11,7 @@ const projects = computed(() => {
 
 <template>
   <main>
-    <WorkbenchWindow path="~/projects" :status="`${projects.length} repos`" title="项目目录">
-      <template #eyebrow>selected work</template>
-      <template #headingAside>构建、实验与长期维护</template>
-
+    <WorkbenchWindow path="~/projects" :status="`${projects.length} repos`">
       <p class="project-command"><span>~/projects $</span> tree -L 1</p>
       <div v-if="projects.length" class="project-list">
         <NuxtLink v-for="project in projects" :key="project.id" :to="`/projects/${project.slug}`" class="project-row">

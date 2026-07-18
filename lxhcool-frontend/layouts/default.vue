@@ -136,7 +136,7 @@ function applyTheme() {
   max-width: calc(100vw - 32px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 24px 0;
+  padding: 24px 0 0;
 }
 
 .shell-column {
@@ -179,7 +179,7 @@ function applyTheme() {
   .site-shell {
     max-width: none;
     width: 100%;
-    padding: 12px;
+    padding: 12px 12px 0;
   }
 }
 
