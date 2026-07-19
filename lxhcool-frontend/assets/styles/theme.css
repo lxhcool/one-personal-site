@@ -20,14 +20,17 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page-bg: #111315;
-  --card-bg: #1a1d21;
-  --text: #f4f4f5;
-  --text-muted: #a1a1aa;
-  --border: #2f3338;
+  --page-bg: #0d1317;
+  --card-bg: #182126;
+  --text: #d9dcda;
+  --text-muted: #909b9f;
+  --border: #303c42;
   --accent: #f4f4f5;
   --accent-foreground: #111315;
   --hover-bg: #24282e;
+  --paper-surface: rgba(18, 27, 32, 0.78);
+  --paper-surface-soft: rgba(27, 38, 43, 0.62);
+  --paper-border: rgba(132, 151, 157, 0.23);
 }
 
 body {
@@ -64,4 +67,258 @@ button {
   border-radius: var(--radius);
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
+}
+
+/* Night room treatment. Component structure stays intact; only the light changes. */
+:root[data-theme='dark'] .workbench-window {
+  color: var(--text);
+  box-shadow: 14px 18px 38px rgba(0, 0, 0, 0.34), inset 1px 1px 0 rgba(178, 202, 207, 0.05);
+}
+
+:root[data-theme='dark'] .window-bar {
+  border-color: rgba(132, 151, 157, 0.16) !important;
+  background: linear-gradient(180deg, rgba(45, 57, 62, 0.82), rgba(22, 31, 36, 0.92)) !important;
+}
+
+:root[data-theme='dark'] .window-status,
+:root[data-theme='dark'] .file-tab,
+:root[data-theme='dark'] .terminal-muted,
+:root[data-theme='dark'] .log-meta,
+:root[data-theme='dark'] .year-heading span,
+:root[data-theme='dark'] .group-heading span,
+:root[data-theme='dark'] .article-copy small,
+:root[data-theme='dark'] .article-row time,
+:root[data-theme='dark'] .friend-copy small,
+:root[data-theme='dark'] .friend-domain,
+:root[data-theme='dark'] .document-meta,
+:root[data-theme='dark'] .back-link {
+  color: #849297 !important;
+}
+
+:root[data-theme='dark'] .file-tab:hover,
+:root[data-theme='dark'] .file-tab.active,
+:root[data-theme='dark'] .article-row:hover,
+:root[data-theme='dark'] .friend-row:hover {
+  background: rgba(111, 135, 140, 0.1) !important;
+}
+
+:root[data-theme='dark'] .file-tab.active {
+  color: #d7dddc !important;
+}
+
+:root[data-theme='dark'] :is(
+  .log-entry h2,
+  .year-heading strong,
+  .group-heading strong,
+  .article-copy strong,
+  .friend-copy strong,
+  .document-header h1,
+  .project-header h1,
+  .content-heading h1,
+  .post-content h2,
+  .post-content h3,
+  .post-content h4,
+  .project-content h2,
+  .project-content h3
+) {
+  color: #d8dddb !important;
+}
+
+:root[data-theme='dark'] :is(
+  .terminal-feed,
+  .document-lead,
+  .post-content,
+  .moment-text,
+  .project-header p,
+  .project-content
+) {
+  color: #b4bfc1 !important;
+}
+
+:root[data-theme='dark'] :is(
+  .terminal-session,
+  .log-entry,
+  .year-heading,
+  .group-heading,
+  .article-row,
+  .friend-row,
+  .document-tags,
+  .tech-strip
+) {
+  border-color: rgba(135, 153, 158, 0.16) !important;
+}
+
+:root[data-theme='dark'] .article-toc {
+  border-color: rgba(132, 151, 157, 0.22) !important;
+  background: linear-gradient(145deg, rgba(75, 94, 99, 0.16), transparent 42%), rgba(24, 35, 40, 0.88) !important;
+  box-shadow: 8px 11px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme='dark'] .toc-item {
+  color: #97a4a7 !important;
+}
+
+:root[data-theme='dark'] .toc-item:hover {
+  background: rgba(77, 154, 117, 0.1) !important;
+  color: #8dc9aa !important;
+}
+
+:root[data-theme='dark'] .post-content pre,
+:root[data-theme='dark'] .project-content pre {
+  border-color: rgba(143, 161, 166, 0.18) !important;
+  background: #080d10 !important;
+}
+
+:root[data-theme='dark'] .moment-music-card {
+  border-color: rgba(147, 165, 169, 0.18) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+:root[data-theme='dark'] .moment-music-card :is(.music-main strong, .play-button) {
+  color: #bec8c9 !important;
+}
+
+:root[data-theme='dark'] .moment-music-card .play-button {
+  border-color: rgba(147, 165, 169, 0.16) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+:root[data-theme='dark'] .tree-item {
+  color: #87979b !important;
+}
+
+:root[data-theme='dark'] .music-outer {
+  --night-ink: #aebdc0;
+  color: var(--night-ink);
+}
+
+:root[data-theme='dark'] .music-outer :is(.np-title, .ctrl-btn, .prog-fill, .eq-bar) {
+  color: #c3cdce !important;
+}
+
+:root[data-theme='dark'] .music-outer :is(.prog-fill, .eq-bar) {
+  background: #91a9ad !important;
+}
+
+:root[data-theme='dark'] .music-outer :is(.np-artist, .prog-time, .mini-btn, .trk-title, .playlist-empty) {
+  color: #7f9297 !important;
+}
+
+:root[data-theme='dark'] .music-outer :is(.prog-track, .vol-slider) {
+  background: rgba(153, 178, 183, 0.16) !important;
+}
+
+:root[data-theme='dark'] .music-outer :is(.ctrl-btn:hover, .ctrl-btn.is-main, .track-item:hover, .track-item.active) {
+  background: rgba(144, 169, 174, 0.1) !important;
+}
+
+:root[data-theme='dark'] .music-outer .trk-idx {
+  background: rgba(144, 169, 174, 0.1) !important;
+  color: #899da1 !important;
+}
+
+:root[data-theme='dark'] .music-outer .track-item.active .trk-idx {
+  background: #6e878c !important;
+  color: #11191d !important;
+}
+
+:root[data-theme='dark'] .date-calendar {
+  border-color: rgba(139, 160, 166, 0.2) !important;
+  background: rgba(23, 34, 39, 0.62) !important;
+  box-shadow: inset 0 1px 0 rgba(190, 210, 213, 0.05), 5px 8px 20px rgba(0, 0, 0, 0.16);
+  color: #91a1a5 !important;
+}
+
+:root[data-theme='dark'] .date-calendar .cal-month {
+  color: #ccd5d4 !important;
+}
+
+:root[data-theme='dark'] .date-calendar .cal-nav {
+  background: rgba(145, 167, 172, 0.08) !important;
+  color: #839397 !important;
+}
+
+:root[data-theme='dark'] .date-calendar .cal-nav:hover:not(.disabled) {
+  background: rgba(145, 167, 172, 0.15) !important;
+  color: #c2cccd !important;
+}
+
+:root[data-theme='dark'] .date-calendar :is(.cal-head, .cal-day) {
+  color: #8d9da1 !important;
+}
+
+:root[data-theme='dark'] .date-calendar .cal-day.cal-adjacent {
+  color: #4f5e63 !important;
+}
+
+:root[data-theme='dark'] .date-calendar .cal-day.cal-today {
+  background: rgba(77, 154, 117, 0.16) !important;
+  color: #78c49d !important;
+}
+
+:root[data-theme='dark'] .keyboard-outer {
+  --ink: #aeb9bb;
+  --body-top: #455158;
+  --body-mid: #354148;
+  --body-bottom: #263137;
+  --slope-top: #536168;
+  --slope-left: #414d54;
+  --slope-right: #303b41;
+  --slope-bottom: #202a2f;
+  --face-top: #46535a;
+  --face-mid: #37444a;
+  --face-bottom: #2c373d;
+}
+
+:root[data-theme='dark'] .keyboard-outer .key::after {
+  opacity: .7;
+  filter: blur(4px);
+}
+
+:root[data-theme='dark'] .keyboard-outer .shell {
+  box-shadow: inset 0 1px 1px rgba(197, 215, 218, .14), inset 0 -3px 5px rgba(0, 0, 0, .16), 0 1px 0 #263137, 0 2px 0 #1b252a, 0 4px 7px rgba(0, 0, 0, .24) !important;
+}
+
+:root[data-theme='dark'] .keyboard-outer .inner {
+  box-shadow: inset 0 1px 1px rgba(197, 215, 218, .1), inset 0 -2px 3px rgba(0, 0, 0, .12), 0 0 0 1px rgba(183, 202, 205, .06) !important;
+}
+
+:root[data-theme='dark'] .keyboard-outer .inner::before {
+  background: linear-gradient(145deg, rgba(144, 91, 91, 0.26), transparent 36%) !important;
+}
+
+:root[data-theme='dark'] .keyboard-outer .legend {
+  color: #aeb9bb !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .34) !important;
+}
+
+:root[data-theme='dark'] .photo-tile__body {
+  background: linear-gradient(145deg, #4a565c 0%, #2b363c 100%) !important;
+  box-shadow: 2px 3px 0 rgba(24, 32, 36, .72), 3px 6px 10px rgba(0, 0, 0, .26) !important;
+}
+
+:root[data-theme='dark'] .photo-tile__face {
+  background: #354248 !important;
+  box-shadow: inset 0 1px 1px rgba(206, 222, 224, .1), 0 1px 2px rgba(0, 0, 0, .18) !important;
+}
+
+:root[data-theme='dark'] .photo-tile__face img {
+  filter: brightness(.82) saturate(.88);
+}
+
+:root[data-theme='dark'] .photo-tile--empty .photo-tile__face {
+  background: rgba(52, 66, 72, .46) !important;
+  opacity: .5;
+}
+
+:root[data-theme='dark'] .photo-tile--empty .photo-tile__body {
+  background: rgba(43, 55, 61, .34) !important;
+}
+
+:root[data-theme='dark'] body::before {
+  background-color: rgba(43, 61, 70, 0.34);
+}
+
+:root[data-theme='dark'] body {
+  background-image: none;
 }

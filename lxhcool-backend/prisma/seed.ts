@@ -1,27 +1,62 @@
 import { PrismaClient } from '@prisma/client';
+import { seedArticles, seedFriendLinks } from './content';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // 默认动态
-  const existingPost = await prisma.post.findFirst({
-    where: { slug: 'default-moment' },
-  });
-
-  if (!existingPost) {
-    await prisma.post.create({
-      data: {
-        type: 'MOMENT',
-        title: '这是一条示例动态',
-        slug: 'default-moment',
-        content: '这是一条示例动态，可以在后台管理页面中删除或编辑。',
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-      },
+  // 正式文章内容
+  for (const article of seedArticles) {
+    const exists = await prisma.post.findUnique({
+      where: { slug: article.slug },
     });
-    console.log('默认动态已创建');
-  } else {
-    console.log('默认动态已存在，跳过创建');
+    if (!exists) {
+      await prisma.post.create({
+        data: {
+          ...article,
+          type: 'ARTICLE',
+          status: 'PUBLISHED',
+          media: {},
+        },
+      });
+      console.log(`文章 [${article.title}] 已创建`);
+    } else {
+      console.log(`文章 [${article.title}] 已存在，跳过创建`);
+    }
+  }
+
+  // 友情链接
+  for (const friendLink of seedFriendLinks) {
+    const exists = await prisma.friendLink.findFirst({
+      where: { url: friendLink.url },
+    });
+    if (!exists) {
+      await prisma.friendLink.create({
+        data: {
+          ...friendLink,
+          isVisible: true,
+        },
+      });
+      console.log(`友情链接 [${friendLink.name}] 已创建`);
+    } else {
+      console.log(`友情链接 [${friendLink.name}] 已存在，跳过创建`);
+    }
+  }
+
+  // 内容分类，确保后台编辑时可继续选择这些分类
+  const categories = [
+    { type: 'POST' as const, name: '设计思考', sortOrder: 20 },
+    { type: 'POST' as const, name: '工程实践', sortOrder: 21 },
+    { type: 'POST' as const, name: '写作思考', sortOrder: 22 },
+    { type: 'FRIEND_LINK' as const, name: '开发者', sortOrder: 20 },
+    { type: 'FRIEND_LINK' as const, name: '阅读', sortOrder: 21 },
+  ];
+
+  for (const category of categories) {
+    await prisma.contentCategory.upsert({
+      where: { type_name: { type: category.type, name: category.name } },
+      update: { sortOrder: category.sortOrder },
+      create: category,
+    });
   }
 
   // 默认小工具

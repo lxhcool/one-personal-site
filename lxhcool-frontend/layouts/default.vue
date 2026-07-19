@@ -60,14 +60,11 @@ const frontendTree: TreeNode = {
 const flatTree = flattenTree(frontendTree, 0).slice(1);
 
 onMounted(() => {
-  const storedTheme = window.localStorage.getItem('site-theme');
-  if (storedTheme === 'dark' || storedTheme === 'light') {
-    theme.value = storedTheme;
+  const renderedTheme = document.documentElement.dataset.theme;
+  if (renderedTheme === 'dark' || renderedTheme === 'light') {
+    theme.value = renderedTheme;
   }
-  applyTheme();
 });
-
-watch(theme, () => applyTheme());
 
 const { getStrategy } = useWidgetRegistry();
 
@@ -85,11 +82,6 @@ const photoGalleryNormalized = computed(() =>
     ? getStrategy(photoGalleryWidget.value.type).normalize(photoGalleryWidget.value.config)
     : {},
 );
-function applyTheme() {
-  if (import.meta.server) return;
-  document.documentElement.dataset.theme = theme.value;
-  window.localStorage.setItem('site-theme', theme.value);
-}
 </script>
 
 <template>
@@ -125,6 +117,8 @@ function applyTheme() {
   <div v-if="photoGalleryWidget" class="fixed z-10 gallery-side">
     <PhotoGalleryWidget :widget="photoGalleryWidget" :normalized="photoGalleryNormalized" />
   </div>
+
+  <PullCordThemeToggle />
 </template>
 
 <style scoped>
