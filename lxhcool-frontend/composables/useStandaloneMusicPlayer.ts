@@ -55,7 +55,7 @@ function normalizeTrack(track: Record<string, unknown>, baseUrl: string): Track 
 
 // ── composable ──
 export function useStandaloneMusicPlayer() {
-  const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+  const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
 
   // ---- 获取音乐 widget 配置（复用布局层已 fetch 的 public-widgets 数据，避免重复请求） ----
   const { status, data: widgetsData } = useAsyncData('public-widgets', () => listPublicWidgets());
@@ -93,7 +93,7 @@ export function useStandaloneMusicPlayer() {
   // ---- 本地配置播放列表 ----
   const configuredPlaylist = computed<Track[]>(() =>
     (readArray<Record<string, unknown>>(widgetConfig.value, 'playlist'))
-      .map((t) => normalizeTrack(t, apiBaseUrl))
+      .map((t) => normalizeTrack(t, publicApiBaseUrl))
       .filter((t) => t.audioUrl || t.embedUrl || t.externalUrl),
   );
 
@@ -101,7 +101,7 @@ export function useStandaloneMusicPlayer() {
   const playlist = computed<Track[]>(() => {
     const remote = remotePlaylist.value?.tracks;
     return (remote?.length ? remote : configuredPlaylist.value).map((t) =>
-      normalizeTrack(t as Record<string, unknown>, apiBaseUrl),
+      normalizeTrack(t as Record<string, unknown>, publicApiBaseUrl),
     );
   });
 

@@ -169,6 +169,46 @@ button {
   background: #080d10 !important;
 }
 
+:root[data-theme='dark'] .document-lead {
+  color: #99a6a8 !important;
+}
+
+:root[data-theme='dark'] .post-content {
+  color: #adb7b9 !important;
+}
+
+:root[data-theme='dark'] .post-content :is(strong, h2, h3, h4) {
+  color: #d1d7d5 !important;
+}
+
+:root[data-theme='dark'] .post-content h2::before {
+  color: #79aa8f !important;
+}
+
+:root[data-theme='dark'] .post-content a {
+  color: #aaa1d0 !important;
+  text-decoration-color: rgba(170, 161, 208, 0.38) !important;
+}
+
+:root[data-theme='dark'] .post-content blockquote {
+  border-left-color: #648975 !important;
+  color: #9eaaa6 !important;
+}
+
+:root[data-theme='dark'] .post-content code {
+  background: rgba(174, 161, 208, 0.08) !important;
+  color: #b8aed9 !important;
+}
+
+:root[data-theme='dark'] .post-content pre code {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+:root[data-theme='dark'] .post-content li::marker {
+  color: #789784 !important;
+}
+
 :root[data-theme='dark'] .moment-music-card {
   border-color: rgba(147, 165, 169, 0.18) !important;
   background: rgba(255, 255, 255, 0.035) !important;

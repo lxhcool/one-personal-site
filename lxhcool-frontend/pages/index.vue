@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { listPublicPosts } from '~/entities/post/api/postApi';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
+import { createThumbnailUrl, resolvePublicImageUrl } from '~/shared/media/imageSources';
 import MomentMusicCard from '~/components/moments/MomentMusicCard.vue';
 
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { open: openImagePreview } = useImagePreview();
 const { data: postsData } = await useAsyncData('home-moments', () => listPublicPosts('MOMENT'));
 
 const posts = computed(() => {
@@ -15,9 +17,15 @@ const posts = computed(() => {
 
 function resolveAssetUrl(url?: string | null) {
   if (!url) return undefined;
-  if (/^https?:\/\//i.test(url)) return url;
-  if (!url.startsWith('/')) return url;
-  return `${apiBaseUrl}${url}`;
+  return resolvePublicImageUrl(url, publicApiBaseUrl);
+}
+
+function getMomentPhotos(media: Record<string, unknown>, title?: string | null) {
+  return readMediaStringArray(media, 'photos').map((photo) => ({
+    src: resolvePublicImageUrl(photo, publicApiBaseUrl),
+    thumbnail: createThumbnailUrl(photo, publicApiBaseUrl, { width: 240, height: 240, fit: 'cover' }),
+    alt: title || '',
+  }));
 }
 
 function readMediaObject(media: Record<string, unknown>, key: string) {
@@ -91,16 +99,23 @@ function formatDate(value?: string | null) {
             <h2 v-if="post.title">{{ post.title }}</h2>
 
             <div
-              v-if="readMediaStringArray(post.media, 'photos').length"
+              v-if="getMomentPhotos(post.media, post.title).length"
               class="log-photos"
             >
-              <img
-                v-for="photo in readMediaStringArray(post.media, 'photos')"
-                :key="photo"
-                :src="resolveAssetUrl(photo)"
-                alt=""
-                loading="lazy"
-              />
+              <button
+                v-for="(photo, photoIndex) in getMomentPhotos(post.media, post.title)"
+                :key="photo.src"
+                type="button"
+                :aria-label="`预览图片 ${photoIndex + 1}`"
+                @click="openImagePreview(getMomentPhotos(post.media, post.title), photoIndex)"
+              >
+                <img
+                  :src="photo.thumbnail"
+                  :alt="photo.alt"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
             </div>
 
             <MomentMusicCard
@@ -188,12 +203,27 @@ function formatDate(value?: string | null) {
   margin-top: 15px;
 }
 
-.log-photos img {
+.log-photos button {
+  display: block;
   width: 100px;
   height: 100px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
   border-radius: 5px;
-  object-fit: cover;
+  background: rgba(105, 91, 72, 0.08);
+  cursor: zoom-in;
 }
+
+.log-photos img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 150ms ease;
+}
+
+.log-photos button:hover img { transform: scale(1.035); }
 
 .terminal-feed :deep(.moment-music-card) {
   margin-top: 15px;

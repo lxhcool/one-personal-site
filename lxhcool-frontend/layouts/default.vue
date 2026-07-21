@@ -5,6 +5,7 @@ import Keyboard87 from '~/components/widgets/ui/Keyboard87.vue';
 import StandaloneMusicPlayer from '~/components/widgets/ui/StandaloneMusicPlayer.vue';
 import DateCardWidget from '~/components/widgets/ui/DateCardWidget.vue';
 import PhotoGalleryWidget from '~/components/widgets/ui/PhotoGalleryWidget.vue';
+import ImageLightbox from '~/components/media/ImageLightbox.vue';
 import { useWidgetRegistry } from '~/components/widgets/strategies/useWidgetRegistry';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
@@ -119,6 +120,7 @@ const photoGalleryNormalized = computed(() =>
   </div>
 
   <PullCordThemeToggle />
+  <ImageLightbox />
 </template>
 
 <style scoped>

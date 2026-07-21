@@ -1,19 +1,31 @@
 export function getRequiredPublicRuntimeConfig() {
   const config = useRuntimeConfig();
-  const apiBaseUrl = config.public.apiBaseUrl;
+  const apiBaseUrl = import.meta.server
+    ? config.apiBaseUrl
+    : config.public.apiBaseUrl;
+  const publicApiBaseUrl = config.public.apiBaseUrl;
   const siteUrl = config.public.siteUrl;
   const adminUrl = config.public.adminUrl;
 
   if (!apiBaseUrl) {
-    throw new Error('Missing required env: NUXT_PUBLIC_API_BASE_URL');
+    throw new Error(
+      import.meta.server
+        ? 'Missing required env: NUXT_API_BASE_URL'
+        : 'Missing required env: NUXT_PUBLIC_API_BASE_URL',
+    );
   }
 
   if (!siteUrl) {
     throw new Error('Missing required env: NUXT_PUBLIC_SITE_URL');
   }
 
+  if (!publicApiBaseUrl) {
+    throw new Error('Missing required env: NUXT_PUBLIC_API_BASE_URL');
+  }
+
   return {
     apiBaseUrl: resolveLocalUrl(String(apiBaseUrl)),
+    publicApiBaseUrl: resolveLocalUrl(String(publicApiBaseUrl)),
     siteUrl: String(siteUrl).replace(/\/+$/, ''),
     adminUrl: resolveLocalUrl(String(adminUrl || 'http://127.0.0.1:5173')),
   };

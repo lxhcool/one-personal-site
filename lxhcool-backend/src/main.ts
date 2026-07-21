@@ -43,7 +43,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, swaggerDocument);
 
   const port = requirePort();
-  await app.listen(port);
+  await app.listen(port, '127.0.0.1');
 }
 
 bootstrap();

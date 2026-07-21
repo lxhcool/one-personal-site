@@ -1,5 +1,11 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { Request, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -14,6 +20,8 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto, res: Response) {
+    this.requireValidRegistrationCode(dto.registrationCode);
+
     const email = dto.email.toLowerCase();
     const existed = await this.prisma.adminUser.findUnique({ where: { email } });
     if (existed) throw new ConflictException('Email already registered');
@@ -92,6 +100,19 @@ export class AuthService {
       path: '/',
       maxAge,
     });
+  }
+
+  private requireValidRegistrationCode(registrationCode: string) {
+    const expectedCode = process.env.ADMIN_REGISTRATION_CODE?.trim();
+    if (!expectedCode) {
+      throw new ServiceUnavailableException('Registration is not configured');
+    }
+
+    const expectedHash = createHash('sha256').update(expectedCode).digest();
+    const actualHash = createHash('sha256').update(registrationCode).digest();
+    if (!timingSafeEqual(expectedHash, actualHash)) {
+      throw new UnauthorizedException('Invalid registration code');
+    }
   }
 
   private toAdminUser(user: { id: string; email: string; name: string | null; avatar?: string | null }) {

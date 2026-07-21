@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { X } from '@lucide/vue';
 import type { SiteWidget } from '~/entities/widget/model/types';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
+import { createThumbnailUrl, resolvePublicImageUrl } from '~/shared/media/imageSources';
 
 type GalleryImage = {
   url: string;
@@ -15,8 +15,8 @@ const props = defineProps<{
   normalized: Record<string, unknown>;
 }>();
 
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
-const activeImage = ref<GalleryImage | null>(null);
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { open: openImagePreview } = useImagePreview();
 
 const images = computed(() => {
   if (!Array.isArray(props.normalized.images)) return [];
@@ -29,7 +29,8 @@ const images = computed(() => {
         Number.isInteger(image.slot) && Number(image.slot) >= 0 && Number(image.slot) < 49
           ? Number(image.slot)
           : index,
-      url: resolveImageUrl(image.url),
+      url: resolvePublicImageUrl(image.url, publicApiBaseUrl),
+      thumbnail: createThumbnailUrl(image.url, publicApiBaseUrl, { width: 160, height: 160, fit: 'cover' }),
     }));
 });
 
@@ -48,21 +49,15 @@ const wallSlots = computed(() => {
   });
 });
 
-function resolveImageUrl(url: string) {
-  if (/^https?:\/\//i.test(url) || !url.startsWith('/')) return url;
-  return `${apiBaseUrl}${url}`;
+function previewImage(image: GalleryImage & { thumbnail: string }) {
+  const previewImages = images.value.map((item) => ({
+    src: item.url,
+    alt: item.alt,
+    caption: item.caption,
+  }));
+  const index = images.value.findIndex((item) => item.url === image.url);
+  openImagePreview(previewImages, Math.max(index, 0));
 }
-
-function closeLightbox() {
-  activeImage.value = null;
-}
-
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') closeLightbox();
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown));
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 </script>
 
 <template>
@@ -82,13 +77,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
             '--tile-shift-y': `${item.shiftY}px`,
           }"
           :aria-label="item.image ? item.image.caption || item.image.alt || `查看第 ${item.slot + 1} 格照片` : `第 ${item.slot + 1} 格为空`"
-          @click="item.image && (activeImage = item.image)"
+          @click="item.image && previewImage(item.image)"
         >
           <span class="photo-tile__body" aria-hidden="true"></span>
           <span class="photo-tile__face">
             <img
               v-if="item.image"
-              :src="item.image.url"
+              :src="item.image.thumbnail"
               :alt="item.image.alt || item.image.caption || ''"
               loading="lazy"
               decoding="async"
@@ -100,19 +95,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     </div>
   </section>
 
-  <Teleport to="body">
-    <Transition name="gallery-lightbox">
-      <div v-if="activeImage" class="gallery-lightbox" role="dialog" aria-modal="true" @click.self="closeLightbox">
-        <button type="button" class="gallery-lightbox__close" aria-label="关闭照片" @click="closeLightbox">
-          <X :size="19" stroke-width="1.8" />
-        </button>
-        <figure>
-          <img :src="activeImage.url" :alt="activeImage.alt || activeImage.caption || ''" />
-          <figcaption v-if="activeImage.caption">{{ activeImage.caption }}</figcaption>
-        </figure>
-      </div>
-    </Transition>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -225,66 +207,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.24), 0 4px 10px rgba(47, 58, 66, 0.14);
 }
 
-.gallery-lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 32px;
-  background: rgba(25, 30, 34, 0.72);
-  backdrop-filter: blur(12px);
-}
-
-.gallery-lightbox figure {
-  max-width: min(920px, 90vw);
-  margin: 0;
-}
-
-.gallery-lightbox img {
-  display: block;
-  max-width: 100%;
-  max-height: 82vh;
-  border-radius: 6px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
-}
-
-.gallery-lightbox figcaption {
-  margin-top: 12px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
-  text-align: center;
-}
-
-.gallery-lightbox__close {
-  position: fixed;
-  top: 22px;
-  right: 22px;
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 0;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #30343a;
-  cursor: pointer;
-}
-
-.gallery-lightbox-enter-active,
-.gallery-lightbox-leave-active {
-  transition: opacity 180ms ease;
-}
-
-.gallery-lightbox-enter-from,
-.gallery-lightbox-leave-to {
-  opacity: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .photo-tile,
-  .gallery-lightbox-enter-active,
-  .gallery-lightbox-leave-active {
+  .photo-tile {
     transition: none;
   }
 }

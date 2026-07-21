@@ -25,6 +25,7 @@ const formSchema = z
       error: (issue) => (issue.input === '' ? '请输入邮箱' : undefined),
     }),
     name: z.string().min(1, '请输入用户名'),
+    registrationCode: z.string().min(1, '请输入注册口令'),
     password: z.string().min(8, '密码至少需要 8 位'),
     confirmPassword: z.string().min(1, '请再次输入密码'),
   })
@@ -45,6 +46,7 @@ export function SignUpForm({
     defaultValues: {
       email: '',
       name: '',
+      registrationCode: '',
       password: '',
       confirmPassword: '',
     },
@@ -56,6 +58,7 @@ export function SignUpForm({
       await authApi.register({
         email: data.email,
         name: data.name,
+        registrationCode: data.registrationCode,
         password: data.password,
       })
       toast.success('注册成功')
@@ -108,6 +111,23 @@ export function SignUpForm({
               <FormLabel>密码</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='请输入密码' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='registrationCode'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>注册口令</FormLabel>
+              <FormControl>
+                <PasswordInput
+                  autoComplete='off'
+                  placeholder='请输入注册口令'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

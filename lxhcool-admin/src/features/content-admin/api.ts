@@ -57,6 +57,7 @@ export const authApi = {
     email: string
     password: string
     name: string
+    registrationCode: string
   }) =>
     apiFetch<AdminUser>('/auth/register', {
       method: 'POST',

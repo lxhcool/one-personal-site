@@ -2,10 +2,12 @@
 import { marked } from 'marked';
 import { getPublicPost } from '~/entities/post/api/postApi';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
+import { createThumbnailUrl, resolvePublicImageUrl } from '~/shared/media/imageSources';
 
 const route = useRoute();
 const slug = String(route.params.slug);
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { open: openImagePreview } = useImagePreview();
 const { data: postData } = await useAsyncData(`public-post-${slug}`, () => getPublicPost(slug));
 
 const post = computed(() => {
@@ -26,8 +28,15 @@ const articleDocument = computed(() => buildArticleDocument(post.value.content))
 const renderedContent = computed(() => articleDocument.value.html);
 const articleHeadings = computed(() => (post.value.type === 'ARTICLE' ? articleDocument.value.headings : []));
 const coverImage = computed(() => resolveAssetUrl(post.value.coverImage));
+const coverThumbnail = computed(() => post.value.coverImage
+  ? createThumbnailUrl(post.value.coverImage, publicApiBaseUrl, { width: 960, height: 720, fit: 'inside' })
+  : undefined);
 const media = computed(() => post.value.media ?? {});
-const photos = computed(() => readMediaStringArray('photos').map(resolveAssetUrl).filter(Boolean));
+const photos = computed(() => readMediaStringArray('photos').map((photo) => ({
+  src: resolvePublicImageUrl(photo, publicApiBaseUrl),
+  thumbnail: createThumbnailUrl(photo, publicApiBaseUrl, { width: 320, height: 320, fit: 'cover' }),
+  alt: post.value.title,
+})));
 const music = computed(() => {
   const nested = readMediaObject('music');
   if (Object.keys(nested).length > 0) return nested;
@@ -52,14 +61,12 @@ const videoExternalUrl = computed(() => readMediaString(video.value, 'externalUr
 useSeoMeta({
   title: () => post.value.seoTitle ?? post.value.title,
   description: () => post.value.seoDescription ?? post.value.excerpt ?? undefined,
-  ogImage: () => post.value.ogImage ?? coverImage.value ?? photos.value[0] ?? undefined,
+  ogImage: () => post.value.ogImage ?? coverImage.value ?? photos.value[0]?.src ?? undefined,
 });
 
 function resolveAssetUrl(url?: string | null) {
   if (!url) return undefined;
-  if (/^https?:\/\//i.test(url)) return url;
-  if (!url.startsWith('/')) return url;
-  return `${apiBaseUrl}${url}`;
+  return resolvePublicImageUrl(url, publicApiBaseUrl);
 }
 
 function readMediaObject(key: string) {
@@ -103,7 +110,7 @@ function buildArticleDocument(content: string) {
   const headings: ArticleHeading[] = [];
   const usedIds = new Map<string, number>();
   const source = marked.parse(content, { async: false }) as string;
-  const html = source.replace(
+  const headingHtml = source.replace(
     /<h([2-4])([^>]*)>([\s\S]*?)<\/h\1>/gi,
     (_match, rawLevel: string, rawAttributes: string, innerHtml: string) => {
       const level = Number(rawLevel);
@@ -118,7 +125,44 @@ function buildArticleDocument(content: string) {
     },
   );
 
+  const html = headingHtml.replace(
+    /<img\b([^>]*?)src=(['"])(.*?)\2([^>]*)>/gi,
+    (match, before: string, _quote: string, rawSource: string, after: string) => {
+      const sourceUrl = rawSource.replace(/&amp;/g, '&');
+      const fullSource = resolveAssetUrl(sourceUrl);
+      if (!fullSource) return match;
+    const thumbnailSource = createThumbnailUrl(sourceUrl, publicApiBaseUrl, { width: 960, fit: 'inside' });
+      const attributes = `${before}${after}`
+        .replace(/\s+data-full-src=(['"]).*?\1/gi, '')
+        .replace(/\s+loading=(['"]).*?\1/gi, '')
+        .replace(/\s+decoding=(['"]).*?\1/gi, '');
+      return `<img${attributes} src="${escapeHtmlAttribute(thumbnailSource)}" data-full-src="${escapeHtmlAttribute(fullSource)}" loading="lazy" decoding="async">`;
+    },
+  );
+
   return { html, headings };
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function onArticleImageClick(event: MouseEvent) {
+  const target = event.target;
+  const container = event.currentTarget;
+  if (!(target instanceof HTMLImageElement) || !(container instanceof HTMLElement)) return;
+
+  const imageElements = Array.from(container.querySelectorAll<HTMLImageElement>('img[data-full-src]'));
+  const images = imageElements.map((image) => ({
+    src: image.dataset.fullSrc || image.currentSrc || image.src,
+    alt: image.alt,
+  }));
+  const index = imageElements.indexOf(target);
+  if (index >= 0) openImagePreview(images, index);
 }
 
 function decodeHeadingText(value: string) {
@@ -161,15 +205,19 @@ function createHeadingId(value: string) {
         </header>
 
         <template v-if="post.type === 'ARTICLE'">
-          <img v-if="coverImage" class="document-cover" :src="coverImage" :alt="post.title" />
-          <div class="post-content" v-html="renderedContent" />
+          <button v-if="coverImage && coverThumbnail" type="button" class="document-cover-trigger" aria-label="预览文章封面" @click="openImagePreview([{ src: coverImage, alt: post.title }])">
+            <img class="document-cover" :src="coverThumbnail" :alt="post.title" decoding="async" />
+          </button>
+          <div class="post-content" @click="onArticleImageClick" v-html="renderedContent" />
         </template>
 
         <template v-else>
           <p v-if="post.content" class="moment-text">{{ post.content }}</p>
 
           <div v-if="photos.length > 0" class="moment-photos">
-            <img v-for="photo in photos" :key="photo" :src="photo" alt="" />
+            <button v-for="(photo, photoIndex) in photos" :key="photo.src" type="button" :aria-label="`预览图片 ${photoIndex + 1}`" @click="openImagePreview(photos, photoIndex)">
+              <img :src="photo.thumbnail" :alt="photo.alt" loading="lazy" decoding="async" />
+            </button>
           </div>
 
           <section v-if="musicAudioUrl || musicEmbedUrl || musicExternalUrl" class="post-media">
@@ -271,28 +319,43 @@ function createHeadingId(value: string) {
 .toc-level-3 { padding-left: 28px; }.toc-level-3::before { left: 15px; width: 4px; height: 4px; border-radius: 50%; }.toc-level-3::after { left: 17px; }
 .toc-level-4 { padding-left: 40px; color: #92999d; }.toc-level-4::before { left: 27px; width: 3px; height: 3px; border-radius: 50%; }.toc-level-4::after { left: 29px; }
 .toc-item:hover { border-radius: 3px; background: rgba(101,80,165,.06); color: #6550a5; }
-.back-link { display: inline-flex; margin-bottom: 35px; color: #778189; font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+.back-link { display: inline-flex; margin-bottom: 24px; color: #737c7f; font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
 .back-link:hover { color: #6550a5; }
-.document-header { margin-bottom: 30px; }
-.document-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 12px; color: #828c93; font-family: 'IBM Plex Mono', monospace; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
+.document-header { margin-bottom: 24px; }
+.document-meta { display: flex; flex-wrap: wrap; gap: 7px 12px; align-items: center; margin-bottom: 10px; color: #7b8385; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .045em; text-transform: uppercase; }
 .document-meta span:first-child { padding: 3px 6px; border-radius: 3px; background: rgba(50,128,102,.09); color: #397d67; }
-.document-header h1 { margin: 0; color: #28333b; font-size: clamp(34px, 5.5vw, 52px); letter-spacing: -.06em; line-height: 1.06; }
-.document-lead { margin: 18px 0 0; color: #68737b; font-size: 14px; line-height: 1.8; }
-.document-cover { width: 100%; max-height: 380px; margin: 0 0 34px; border-radius: 7px; object-fit: cover; box-shadow: 0 12px 28px rgba(52,60,65,.11); }
-.post-content { color: #414d55; font-size: 14px; line-height: 1.95; }
-.post-content :deep(h2) { margin: 38px 0 14px; color: #2f3b43; font-size: 23px; letter-spacing: -.035em; }
-.post-content :deep(h3) { margin: 30px 0 12px; color: #344049; font-size: 18px; }
+.document-header h1 { margin: 0; color: #30383b; font-size: 18px; font-weight: 700; letter-spacing: -.012em; line-height: 1.45; }
+.document-lead { max-width: 64ch; margin: 10px 0 0; color: #697174; font-size: 13px; line-height: 1.72; }
+.document-cover-trigger { display: block; width: 100%; margin: 0 0 26px; overflow: hidden; padding: 0; border: 0; border-radius: 7px; background: rgba(105,91,72,.07); cursor: zoom-in; box-shadow: 0 10px 24px rgba(52,60,65,.09); }
+.document-cover { display: block; width: 100%; max-height: 380px; border-radius: inherit; object-fit: cover; transition: transform 160ms ease; }
+.document-cover-trigger:hover .document-cover { transform: scale(1.012); }
+.post-content { color: #4c5558; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 14px; font-weight: 400; line-height: 1.82; text-rendering: optimizeLegibility; }
+.post-content :deep(h2) { margin: 30px 0 11px; color: #343d40; font-size: 16px; font-weight: 700; letter-spacing: -.012em; line-height: 1.55; }
+.post-content :deep(h2::before) { margin-right: 7px; color: #56806c; content: '#'; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; }
+.post-content :deep(h3) { margin: 24px 0 9px; color: #3b4447; font-size: 15px; font-weight: 650; line-height: 1.6; }
+.post-content :deep(h4) { margin: 20px 0 8px; color: #465053; font-size: 14px; font-weight: 650; line-height: 1.65; }
 .post-content :deep(h2), .post-content :deep(h3), .post-content :deep(h4) { scroll-margin-top: 24px; }
-.post-content :deep(p) { margin: 0 0 18px; }
-.post-content :deep(a) { color: #6550a5; text-decoration: underline; text-underline-offset: 3px; }
-.post-content :deep(img) { max-width: 100%; height: auto; margin: 26px 0; border-radius: 6px; }
-.post-content :deep(blockquote) { margin: 25px 0; padding: 2px 0 2px 18px; border-left: 2px solid #6d9b83; color: #68747b; }
-.post-content :deep(code) { border-radius: 3px; background: rgba(61,72,80,.07); color: #6550a5; font-family: 'IBM Plex Mono', monospace; font-size: .86em; }
-.post-content :deep(pre) { overflow-x: auto; margin: 24px 0; padding: 17px; border: 1px solid rgba(57,68,76,.13); border-radius: 6px; background: #2f373d; color: #e7e9e8; line-height: 1.7; }
-.post-content :deep(pre code) { background: transparent; color: inherit; }
+.post-content :deep(p) { margin: 0 0 12px; }
+.post-content :deep(strong) { color: #343d40; font-weight: 650; }
+.post-content :deep(a) { color: #62558d; text-decoration-color: rgba(98,85,141,.38); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.post-content :deep(a:hover) { color: #4f7b67; text-decoration-color: rgba(79,123,103,.5); }
+.post-content :deep(ul), .post-content :deep(ol) { margin: 5px 0 14px; padding-left: 1.45em; }
+.post-content :deep(ul) { list-style: disc; }
+.post-content :deep(ol) { list-style: decimal; }
+.post-content :deep(li) { margin: 3px 0; padding-left: .12em; }
+.post-content :deep(li::marker) { color: #789080; }
+.post-content :deep(img) { max-width: 100%; height: auto; margin: 20px 0; border-radius: 6px; cursor: zoom-in; }
+.post-content :deep(blockquote) { margin: 18px 0; padding: 1px 0 1px 14px; border-left: 2px solid #6f917f; color: #626d69; }
+.post-content :deep(blockquote p:last-child) { margin-bottom: 0; }
+.post-content :deep(code) { padding: .1em .34em; border-radius: 3px; background: rgba(82,72,60,.07); color: #62558d; font-family: 'IBM Plex Mono', monospace; font-size: .86em; }
+.post-content :deep(pre) { overflow-x: auto; margin: 18px 0; padding: 14px 15px; border: 1px solid rgba(57,68,76,.13); border-radius: 6px; background: #2f373d; color: #e7e9e8; font-size: 12.5px; line-height: 1.68; }
+.post-content :deep(pre code) { padding: 0; background: transparent; color: inherit; font-size: inherit; }
+.post-content :deep(hr) { height: 1px; margin: 24px 0; border: 0; background: linear-gradient(90deg, transparent, rgba(91,84,73,.24) 14%, rgba(91,84,73,.24) 86%, transparent); }
 .moment-text { color: #445159; font-size: 14px; line-height: 1.9; white-space: pre-wrap; }
 .moment-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 24px 0; overflow: hidden; border-radius: 7px; }
-.moment-photos img { aspect-ratio: 1 / 1; width: 100%; object-fit: cover; }
+.moment-photos button { display: block; aspect-ratio: 1 / 1; overflow: hidden; padding: 0; border: 0; background: rgba(105,91,72,.07); cursor: zoom-in; }
+.moment-photos img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 150ms ease; }
+.moment-photos button:hover img { transform: scale(1.025); }
 .post-media { display: grid; gap: 12px; margin: 24px 0; padding: 16px; border: 1px solid rgba(55,66,74,.11); border-radius: 7px; background: rgba(229,232,231,.38); }
 .media-heading { display: grid; gap: 3px; }.media-heading strong { color: #39454d; }.media-heading span { color: #7c868d; font-size: 11px; }
 .post-media audio, .post-media video, .post-media iframe { width: 100%; }.post-media video, .post-media iframe { aspect-ratio: 16 / 9; border-radius: 5px; background: #222; }
@@ -306,5 +369,5 @@ function createHeadingId(value: string) {
   .article-toc::after { display: none; }
   .article-toc nav { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; }
 }
-@media (max-width: 560px) { .document-header h1 { font-size: 36px; }.moment-photos { grid-template-columns: repeat(2,minmax(0,1fr)); }.article-toc nav { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .moment-photos { grid-template-columns: repeat(2,minmax(0,1fr)); }.article-toc nav { grid-template-columns: 1fr; } }
 </style>

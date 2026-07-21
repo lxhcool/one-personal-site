@@ -6,7 +6,7 @@ import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 
 const route = useRoute();
 const slug = String(route.params.slug);
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
 const { data: projectData } = await useAsyncData(`public-project-${slug}`, () => getPublicProject(slug));
 
 const project = computed(() => {
@@ -26,7 +26,7 @@ function resolveAssetUrl(url?: string | null) {
   if (!url) return undefined;
   if (/^https?:\/\//i.test(url)) return url;
   if (!url.startsWith('/')) return url;
-  return `${apiBaseUrl}${url}`;
+  return `${publicApiBaseUrl}${url}`;
 }
 </script>
 

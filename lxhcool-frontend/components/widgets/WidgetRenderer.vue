@@ -12,7 +12,7 @@ const props = defineProps<{
   widget: SiteWidget;
 }>();
 
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
 const audioRef = ref<HTMLAudioElement | null>(null);
 const activeEmbedUrl = ref('');
 const isPlaying = ref(false);
@@ -384,7 +384,7 @@ function resolveAssetUrl(url?: string | null) {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
   if (!url.startsWith('/')) return url;
-  return `${apiBaseUrl}${url}`;
+  return `${publicApiBaseUrl}${url}`;
 }
 
 function normalizePlaylistTrack(track: Record<string, unknown>) {

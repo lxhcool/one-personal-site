@@ -5,7 +5,7 @@ import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import { ListMusic, Pause, Play, SkipBack, SkipForward, X } from '@lucide/vue';
 
 const props = defineProps<{ widget: SiteWidget; normalized: Record<string, unknown> }>();
-const { apiBaseUrl } = getRequiredPublicRuntimeConfig();
+const { publicApiBaseUrl } = getRequiredPublicRuntimeConfig();
 
 const widgetRef = toRef(props, 'widget');
 const {
@@ -14,7 +14,7 @@ const {
   playlist, currentTrack, displayTitle, displayArtist,
   toggleMusic, playPreviousTrack, playNextTrack, selectPlaylistTrack,
   updateAudioProgress, formatTime,
-} = useMusicPlayerSetup(widgetRef, apiBaseUrl);
+} = useMusicPlayerSetup(widgetRef, publicApiBaseUrl);
 </script>
 
 <template>

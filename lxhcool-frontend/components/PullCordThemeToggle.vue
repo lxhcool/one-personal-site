@@ -64,29 +64,46 @@ onBeforeUnmount(() => {
     >
       <span class="pull-switch__fixture" aria-hidden="true" />
       <span class="pull-switch__cord" aria-hidden="true" />
-      <span class="pull-switch__handle" aria-hidden="true" @animationend="finishPull">
-        <span />
-      </span>
+      <span class="pull-switch__handle" aria-hidden="true" @animationend="finishPull" />
     </button>
   </div>
 </template>
 
 <style scoped>
 .pull-switch {
+  --switch-rope-dark: #51483d;
+  --switch-rope-light: #8a7d6d;
+  --switch-cap: #756858;
+  --switch-wood-light: #b9834f;
+  --switch-wood-mid: #8c5c31;
+  --switch-wood-dark: #65401f;
+  --switch-wood-border: rgba(69, 42, 20, 0.42);
+  --switch-wood-shadow: rgba(61, 39, 20, 0.24);
   position: fixed;
   top: 0;
   right: 38px;
   z-index: 60;
-  width: 42px;
-  height: 116px;
+  width: 38px;
+  height: 122px;
   pointer-events: none;
+}
+
+.pull-switch.dark {
+  --switch-rope-dark: #626d6c;
+  --switch-rope-light: #899493;
+  --switch-cap: #495453;
+  --switch-wood-light: #90653e;
+  --switch-wood-mid: #694625;
+  --switch-wood-dark: #472d18;
+  --switch-wood-border: rgba(27, 17, 9, 0.62);
+  --switch-wood-shadow: rgba(0, 0, 0, 0.34);
 }
 
 .pull-switch__button {
   position: relative;
   display: block;
-  width: 42px;
-  height: 116px;
+  width: 38px;
+  height: 122px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -99,32 +116,36 @@ onBeforeUnmount(() => {
 }
 
 .pull-switch__button:focus-visible {
-  outline: 2px solid rgba(118, 91, 47, 0.42);
-  outline-offset: -5px;
-  border-radius: 0 0 16px 16px;
+  outline: 1px dashed rgba(76, 117, 88, 0.72);
+  outline-offset: -4px;
+  border-radius: 0 0 8px 8px;
 }
 
 .pull-switch__fixture {
   position: absolute;
   top: -2px;
-  left: 7px;
-  width: 28px;
-  height: 11px;
-  border: 1px solid rgba(91, 65, 28, 0.34);
-  border-radius: 0 0 8px 8px;
-  background: linear-gradient(90deg, #8c6a36, #d0aa61 48%, #80602f);
-  box-shadow: inset 0 -2px 3px rgba(72, 49, 19, 0.25), 0 2px 4px rgba(72, 49, 19, 0.13);
+  left: 13px;
+  width: 12px;
+  height: 6px;
+  border: 0;
+  border-radius: 0 0 5px 5px;
+  background: var(--switch-cap);
+  box-shadow: 0 1px 3px rgba(48, 40, 31, 0.16);
 }
 
 .pull-switch__cord {
   position: absolute;
-  top: 8px;
-  left: 20px;
+  top: 5px;
+  left: 18px;
   width: 2px;
-  height: 62px;
+  height: 68px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #6d5330, #b89155 55%, #594224);
-  box-shadow: 1px 0 1px rgba(255, 244, 209, 0.25);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--switch-rope-dark) 0 2px,
+    var(--switch-rope-light) 2px 4px
+  );
+  box-shadow: 1px 0 rgba(255, 255, 255, 0.12);
   transform-origin: top;
   transform: translateZ(0) scaleY(1);
   will-change: transform;
@@ -132,26 +153,33 @@ onBeforeUnmount(() => {
 
 .pull-switch__handle {
   position: absolute;
-  top: 66px;
-  left: 14px;
-  display: grid;
-  width: 14px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid rgba(72, 50, 24, 0.38);
-  border-radius: 8px 8px 10px 10px;
-  background: linear-gradient(90deg, #79542d, #b78042 46%, #6d4725);
-  box-shadow: inset 2px 0 rgba(255, 225, 169, 0.12), 2px 4px 7px rgba(53, 38, 20, 0.2);
+  top: 69px;
+  left: 11px;
+  width: 16px;
+  height: 30px;
+  border: 1px solid var(--switch-wood-border);
+  border-radius: 7px 7px 9px 9px;
+  background:
+    linear-gradient(92deg, transparent 0 22%, rgba(74, 43, 19, 0.2) 24% 27%, transparent 29% 63%, rgba(255, 216, 161, 0.1) 65% 68%, transparent 70%),
+    linear-gradient(90deg, var(--switch-wood-dark), var(--switch-wood-light) 46%, var(--switch-wood-mid) 70%, var(--switch-wood-dark));
+  box-shadow:
+    inset 1px 0 rgba(255, 225, 181, 0.14),
+    inset -1px 0 rgba(54, 31, 14, 0.16),
+    0 4px 8px var(--switch-wood-shadow);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
-.pull-switch__handle span {
-  width: 4px;
-  height: 9px;
-  border-radius: 4px;
-  background: rgba(54, 37, 20, 0.32);
-  box-shadow: 1px 0 rgba(255, 222, 159, 0.13);
+.pull-switch__handle::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(45, 27, 13, 0.46);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 
 .pull-switch.pulling .pull-switch__cord {
@@ -160,11 +188,6 @@ onBeforeUnmount(() => {
 
 .pull-switch.pulling .pull-switch__handle {
   animation: handle-pull 520ms cubic-bezier(.22,.68,.3,1) both;
-}
-
-.pull-switch.dark .pull-switch__fixture,
-.pull-switch.dark .pull-switch__handle {
-  filter: brightness(0.72) saturate(0.72);
 }
 
 .light-switch-flash {
@@ -179,12 +202,12 @@ onBeforeUnmount(() => {
 }
 
 .flash-off {
-  background: radial-gradient(circle at 70% 8%, rgba(20, 30, 34, 0.36), rgba(4, 9, 12, 0.88));
+  background: rgba(5, 11, 14, 0.52);
   animation: switch-light 240ms ease-out both;
 }
 
 .flash-on {
-  background: radial-gradient(circle at 68% 8%, rgba(255, 239, 194, 0.96), rgba(244, 226, 188, 0.82) 38%, rgba(237, 222, 196, 0.56));
+  background: rgba(239, 229, 205, 0.46);
   animation: switch-light 240ms ease-out both;
 }
 
@@ -203,7 +226,7 @@ onBeforeUnmount(() => {
 }
 
 @keyframes switch-light {
-  0% { opacity: .48; }
+  0% { opacity: .34; }
   100% { opacity: 0; }
 }
 

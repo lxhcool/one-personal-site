@@ -11,4 +11,9 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   password!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(128)
+  registrationCode!: string;
 }
