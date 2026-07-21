@@ -1,4 +1,5 @@
 export type WidgetArea = 'LEFT' | 'RIGHT';
+export type WidgetVerticalPosition = 'TOP' | 'BOTTOM';
 
 export type WidgetType =
   | 'MUSIC_PLAYER'
@@ -7,11 +8,14 @@ export type WidgetType =
   | 'PROFILE'
   | 'DATE_CARD'
   | 'PHOTO_GALLERY'
-  | 'PROJECT_TREE';
+  | 'PROJECT_TREE'
+  | 'KEYBOARD';
 
 export type SiteWidget = {
   id: string;
   area: WidgetArea;
+  verticalPosition: WidgetVerticalPosition;
+  rotation: number;
   type: WidgetType;
   title: string | null;
   enabled: boolean;

@@ -1,11 +1,21 @@
-import { IsBoolean, IsIn, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateWidgetDto {
   @IsIn(['LEFT', 'RIGHT'])
   area!: 'LEFT' | 'RIGHT';
 
-  @IsIn(['MUSIC_PLAYER', 'HITOKOTO', 'FRIEND_LINKS', 'PROFILE', 'DATE_CARD', 'PHOTO_GALLERY'])
-  type!: 'MUSIC_PLAYER' | 'HITOKOTO' | 'FRIEND_LINKS' | 'PROFILE' | 'DATE_CARD' | 'PHOTO_GALLERY';
+  @IsOptional()
+  @IsIn(['TOP', 'BOTTOM'])
+  verticalPosition?: 'TOP' | 'BOTTOM';
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-45)
+  @Max(45)
+  rotation?: number;
+
+  @IsIn(['MUSIC_PLAYER', 'HITOKOTO', 'FRIEND_LINKS', 'PROFILE', 'DATE_CARD', 'PHOTO_GALLERY', 'PROJECT_TREE', 'KEYBOARD'])
+  type!: 'MUSIC_PLAYER' | 'HITOKOTO' | 'FRIEND_LINKS' | 'PROFILE' | 'DATE_CARD' | 'PHOTO_GALLERY' | 'PROJECT_TREE' | 'KEYBOARD';
 
   @IsOptional()
   @IsString()

@@ -19,7 +19,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   CalendarDays,
+  FolderTree,
   GripVertical,
+  Images,
+  Keyboard,
   Link2,
   Music2,
   Quote,
@@ -40,7 +43,12 @@ import {
 } from '@/components/ui/card'
 import { PageShell } from './components/page-shell'
 import { musicApi, uploadsApi, widgetsApi } from './api'
-import type { SiteWidget, WidgetArea, WidgetType } from './types'
+import type {
+  SiteWidget,
+  WidgetArea,
+  WidgetType,
+  WidgetVerticalPosition,
+} from './types'
 
 const widgetTypes: {
   value: WidgetType
@@ -92,13 +100,32 @@ const widgetTypes: {
     template: { showTime: true, siteStartDate: '' },
     icon: CalendarDays,
   },
+  {
+    value: 'PHOTO_GALLERY',
+    label: '照片墙',
+    description: '展示后台照片墙中已经配置的图片。',
+    template: { images: [] },
+    icon: Images,
+  },
+  {
+    value: 'PROJECT_TREE',
+    label: '项目目录',
+    description: '展示左上角的项目文件目录树。',
+    template: { maxDepth: 3 },
+    icon: FolderTree,
+  },
+  {
+    value: 'KEYBOARD',
+    label: '键盘',
+    description: '展示桌面边缘的机械键盘组件。',
+    template: {},
+    icon: Keyboard,
+  },
 ]
 
 const typeLabels = Object.fromEntries(
   widgetTypes.map((item) => [item.value, item.label])
 ) as Record<WidgetType, string>
-
-const standaloneWidgetTypes = new Set<WidgetType>(['PHOTO_GALLERY'])
 
 type ActiveDrag =
   | { kind: 'palette'; type: WidgetType }
@@ -304,14 +331,18 @@ export function WidgetsPage() {
   })
   const updateLayout = useMutation({
     mutationFn: async (items: SiteWidget[]) => {
-      const left = items.filter((widget) => widget.area === 'LEFT')
-      const right = items.filter((widget) => widget.area === 'RIGHT')
       await Promise.all(
-        [...left, ...right].map((widget) => {
-          const areaItems = widget.area === 'LEFT' ? left : right
-          const index = areaItems.findIndex((item) => item.id === widget.id)
+        items.map((widget) => {
+          const verticalPosition = widget.verticalPosition ?? 'TOP'
+          const groupItems = items.filter(
+            (item) =>
+              item.area === widget.area &&
+              (item.verticalPosition ?? 'TOP') === verticalPosition
+          )
+          const index = groupItems.findIndex((item) => item.id === widget.id)
           return widgetsApi.update(widget.id, {
             area: widget.area,
+            verticalPosition,
             sortOrder: index,
           })
         })
@@ -336,7 +367,6 @@ export function WidgetsPage() {
   if (updateWidget.isError) throw updateWidget.error
 
   const rows = [...(widgets.data ?? [])]
-    .filter((widget) => !standaloneWidgetTypes.has(widget.type))
     .sort(
       (a, b) => a.sortOrder - b.sortOrder || a.updatedAt.localeCompare(b.updatedAt)
     )
@@ -371,10 +401,16 @@ export function WidgetsPage() {
       if (usedTypes.has(data.type)) return
 
       const template = widgetTypes.find((item) => item.value === data.type)
-      const targetCount = targetArea === 'LEFT' ? leftWidgets.length : rightWidgets.length
+      const targetCount = rows.filter(
+        (widget) =>
+          widget.area === targetArea &&
+          (widget.verticalPosition ?? 'TOP') === 'TOP'
+      ).length
 
       createWidget.mutate({
         area: targetArea,
+        verticalPosition: 'TOP',
+        rotation: 0,
         type: data.type,
         title: template?.label,
         enabled: true,
@@ -389,9 +425,15 @@ export function WidgetsPage() {
     const activeWidget = rows.find((widget) => widget.id === active.id)
     if (!activeWidget) return
 
-    const nextLeft = leftWidgets.filter((widget) => widget.id !== activeWidget.id)
-    const nextRight = rightWidgets.filter((widget) => widget.id !== activeWidget.id)
-    const targetList = targetArea === 'LEFT' ? nextLeft : nextRight
+    const targetVerticalPosition = overWidget?.verticalPosition
+      ?? activeWidget.verticalPosition
+      ?? 'TOP'
+    const remainingWidgets = rows.filter((widget) => widget.id !== activeWidget.id)
+    const targetList = remainingWidgets.filter(
+      (widget) =>
+        widget.area === targetArea &&
+        (widget.verticalPosition ?? 'TOP') === targetVerticalPosition
+    )
     const overIndex = overWidget
       ? Math.max(
           0,
@@ -399,10 +441,21 @@ export function WidgetsPage() {
         )
       : targetList.length
     const insertIndex = overIndex === -1 ? targetList.length : overIndex
-    const movedWidget = { ...activeWidget, area: targetArea }
+    const movedWidget = {
+      ...activeWidget,
+      area: targetArea,
+      verticalPosition: targetVerticalPosition,
+    }
 
     targetList.splice(insertIndex, 0, movedWidget)
-    updateLayout.mutate([...nextLeft, ...nextRight])
+    updateLayout.mutate([
+      ...remainingWidgets.filter(
+        (widget) =>
+          widget.area !== targetArea ||
+          (widget.verticalPosition ?? 'TOP') !== targetVerticalPosition
+      ),
+      ...targetList,
+    ])
   }
 
   const activePalette =
@@ -702,6 +755,98 @@ function SortableWidgetCard({
       {widget.type === 'PROFILE' ? (
         <ProfileEditor widget={widget} updating={updating} onUpdate={onUpdate} />
       ) : null}
+      <WidgetPlacementEditor
+        widget={widget}
+        updating={updating}
+        onUpdate={onUpdate}
+      />
+    </div>
+  )
+}
+
+const widgetPlacements: Array<{
+  area: WidgetArea
+  verticalPosition: WidgetVerticalPosition
+  label: string
+}> = [
+  { area: 'LEFT', verticalPosition: 'TOP', label: '左上' },
+  { area: 'RIGHT', verticalPosition: 'TOP', label: '右上' },
+  { area: 'LEFT', verticalPosition: 'BOTTOM', label: '左下' },
+  { area: 'RIGHT', verticalPosition: 'BOTTOM', label: '右下' },
+]
+
+function WidgetPlacementEditor({
+  widget,
+  updating,
+  onUpdate,
+}: {
+  widget: SiteWidget
+  updating: boolean
+  onUpdate: (payload: Record<string, unknown>) => void
+}) {
+  const verticalPosition = widget.verticalPosition ?? 'TOP'
+  const rotation = Number.isFinite(widget.rotation) ? widget.rotation : 0
+
+  return (
+    <div className='mt-3 grid gap-3 border-t pt-3'>
+      <div className='grid grid-cols-2 gap-1.5'>
+        {widgetPlacements.map((placement) => {
+          const active =
+            widget.area === placement.area &&
+            verticalPosition === placement.verticalPosition
+
+          return (
+            <Button
+              key={`${placement.area}-${placement.verticalPosition}`}
+              type='button'
+              size='sm'
+              variant={active ? 'default' : 'outline'}
+              className='h-8'
+              disabled={updating}
+              onClick={() =>
+                onUpdate({
+                  area: placement.area,
+                  verticalPosition: placement.verticalPosition,
+                })
+              }
+            >
+              {placement.label}
+            </Button>
+          )
+        })}
+      </div>
+
+      <div className='grid grid-cols-[1fr_104px] items-center gap-3'>
+        <div>
+          <Label htmlFor={`widget-rotation-${widget.id}`}>旋转角度</Label>
+          <p className='mt-1 text-xs text-muted-foreground'>支持 -45° 到 45°</p>
+        </div>
+        <div className='relative'>
+          <Input
+            key={`${widget.id}-${rotation}`}
+            id={`widget-rotation-${widget.id}`}
+            type='number'
+            min={-45}
+            max={45}
+            step={1}
+            defaultValue={rotation}
+            disabled={updating}
+            className='pr-7 text-right'
+            onBlur={(event) => {
+              const nextRotation = Math.max(
+                -45,
+                Math.min(45, Number(event.currentTarget.value) || 0)
+              )
+              if (nextRotation !== rotation) {
+                onUpdate({ rotation: nextRotation })
+              }
+            }}
+          />
+          <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
+            °
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

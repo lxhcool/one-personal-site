@@ -7,6 +7,7 @@ import { useProfile } from './useProfile';
 import { useDateCard } from './useDateCard';
 import { usePhotoGallery } from './usePhotoGallery';
 import { useProjectTree } from './useProjectTree';
+import { useKeyboard } from './useKeyboard';
 
 const registry: Record<WidgetType, WidgetStrategy> = {
   MUSIC_PLAYER: useMusicPlayer(),
@@ -16,6 +17,7 @@ const registry: Record<WidgetType, WidgetStrategy> = {
   DATE_CARD: useDateCard(),
   PHOTO_GALLERY: usePhotoGallery(),
   PROJECT_TREE: useProjectTree(),
+  KEYBOARD: useKeyboard(),
 };
 
 export function useWidgetRegistry() {

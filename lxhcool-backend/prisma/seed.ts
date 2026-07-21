@@ -64,6 +64,8 @@ async function main() {
     {
       type: 'PROFILE' as const,
       area: 'RIGHT' as const,
+      verticalPosition: 'TOP' as const,
+      rotation: 0,
       title: '个人信息',
       sortOrder: 1,
       config: {
@@ -74,6 +76,8 @@ async function main() {
     {
       type: 'DATE_CARD' as const,
       area: 'LEFT' as const,
+      verticalPosition: 'TOP' as const,
+      rotation: 0,
       title: '时光',
       sortOrder: 1,
       config: {
@@ -83,8 +87,28 @@ async function main() {
     {
       type: 'HITOKOTO' as const,
       area: 'LEFT' as const,
+      verticalPosition: 'TOP' as const,
+      rotation: 0,
       title: '一言',
       sortOrder: 2,
+      config: {},
+    },
+    {
+      type: 'PROJECT_TREE' as const,
+      area: 'LEFT' as const,
+      verticalPosition: 'TOP' as const,
+      rotation: -3,
+      title: '项目目录',
+      sortOrder: 0,
+      config: {},
+    },
+    {
+      type: 'KEYBOARD' as const,
+      area: 'LEFT' as const,
+      verticalPosition: 'BOTTOM' as const,
+      rotation: 0,
+      title: '键盘',
+      sortOrder: 0,
       config: {},
     },
   ];

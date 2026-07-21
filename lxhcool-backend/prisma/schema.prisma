@@ -42,6 +42,11 @@ enum WidgetArea {
   RIGHT
 }
 
+enum WidgetVerticalPosition {
+  TOP
+  BOTTOM
+}
+
 enum WidgetType {
   MUSIC_PLAYER
   HITOKOTO
@@ -49,6 +54,8 @@ enum WidgetType {
   PROFILE
   DATE_CARD
   PHOTO_GALLERY
+  PROJECT_TREE
+  KEYBOARD
 }
 
 model EmailVerificationCode {
@@ -90,32 +97,34 @@ model Post {
 }
 
 model ContentCategory {
-  id        String       @id @default(cuid())
-  type      CategoryType
-  name      String
-  logo      String?
+  id              String       @id @default(cuid())
+  type            CategoryType
+  name            String
+  logo            String?
   backgroundImage String?
-  sortOrder Int          @default(0)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  sortOrder       Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@unique([type, name])
   @@index([type, sortOrder])
 }
 
 model SiteWidget {
-  id        String     @id @default(cuid())
-  area      WidgetArea
-  type      WidgetType
-  title     String?
-  enabled   Boolean    @default(true)
-  sortOrder Int        @default(0)
-  config    Json       @default("{}")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id               String                 @id @default(cuid())
+  area             WidgetArea
+  verticalPosition WidgetVerticalPosition @default(TOP)
+  rotation         Float                  @default(0)
+  type             WidgetType
+  title            String?
+  enabled          Boolean                @default(true)
+  sortOrder        Int                    @default(0)
+  config           Json                   @default("{}")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   @@unique([type])
-  @@index([enabled, area, sortOrder])
+  @@index([enabled, area, verticalPosition, sortOrder])
 }
 
 model Project {

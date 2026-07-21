@@ -11,13 +11,13 @@ export class WidgetsService {
   listPublic() {
     return this.prisma.siteWidget.findMany({
       where: { enabled: true },
-      orderBy: [{ area: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
+      orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
   }
 
   listAdmin() {
     return this.prisma.siteWidget.findMany({
-      orderBy: [{ area: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
+      orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
   }
 
@@ -34,6 +34,8 @@ export class WidgetsService {
     return this.prisma.siteWidget.create({
       data: {
         area: dto.area,
+        verticalPosition: dto.verticalPosition ?? 'TOP',
+        rotation: dto.rotation ?? 0,
         type: dto.type,
         title: dto.title?.trim() || null,
         enabled: dto.enabled ?? true,
@@ -48,6 +50,8 @@ export class WidgetsService {
       where: { id },
       data: {
         area: dto.area,
+        verticalPosition: dto.verticalPosition,
+        rotation: dto.rotation,
         type: dto.type,
         title: dto.title === undefined ? undefined : dto.title?.trim() || null,
         enabled: dto.enabled,

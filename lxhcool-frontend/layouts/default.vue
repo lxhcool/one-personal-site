@@ -7,6 +7,7 @@ import DateCardWidget from '~/components/widgets/ui/DateCardWidget.vue';
 import PhotoGalleryWidget from '~/components/widgets/ui/PhotoGalleryWidget.vue';
 import ImageLightbox from '~/components/media/ImageLightbox.vue';
 import { useWidgetRegistry } from '~/components/widgets/strategies/useWidgetRegistry';
+import type { SiteWidget, WidgetArea, WidgetVerticalPosition } from '~/entities/widget/model/types';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
 const [{ data: widgetsData }, { data: currentUser }] = await Promise.all([
@@ -74,49 +75,99 @@ const widgets = computed(() => {
   if (isLoggedIn.value) return all;
   return all.filter((w) => !getStrategy(w.type).requiresAuth);
 });
-const rightWidgets = computed(() => widgets.value.filter((widget) => widget.area === 'RIGHT'));
-const photoGalleryWidget = computed(() =>
-  rightWidgets.value.find((widget) => widget.type === 'PHOTO_GALLERY'),
-);
-const photoGalleryNormalized = computed(() =>
-  photoGalleryWidget.value
-    ? getStrategy(photoGalleryWidget.value.type).normalize(photoGalleryWidget.value.config)
-    : {},
-);
+
+type WidgetCorner = 'left-top' | 'left-bottom' | 'right-top' | 'right-bottom';
+
+const widgetCorners: WidgetCorner[] = [
+  'left-top',
+  'left-bottom',
+  'right-top',
+  'right-bottom',
+];
+
+const widgetsByCorner = computed<Record<WidgetCorner, SiteWidget[]>>(() => {
+  const groups: Record<WidgetCorner, SiteWidget[]> = {
+    'left-top': [],
+    'left-bottom': [],
+    'right-top': [],
+    'right-bottom': [],
+  };
+
+  for (const widget of widgets.value) {
+    groups[getWidgetCorner(widget)].push(widget);
+  }
+
+  for (const corner of widgetCorners) {
+    groups[corner].sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  return groups;
+});
+
+function getWidgetCorner(widget: SiteWidget): WidgetCorner {
+  const area: WidgetArea = widget.area === 'RIGHT' ? 'RIGHT' : 'LEFT';
+  const verticalPosition: WidgetVerticalPosition =
+    widget.verticalPosition === 'BOTTOM' ? 'BOTTOM' : 'TOP';
+  return `${area.toLowerCase()}-${verticalPosition.toLowerCase()}` as WidgetCorner;
+}
+
+function getWidgetRotation(widget: SiteWidget) {
+  const rotation = Number(widget.rotation);
+  return Number.isFinite(rotation) ? Math.max(-45, Math.min(45, rotation)) : 0;
+}
+
+function normalizeWidget(widget: SiteWidget) {
+  return getStrategy(widget.type).normalize(widget.config ?? {});
+}
 </script>
 
 <template>
-  <div class="fixed top-[1.625rem] left-[1.875rem] rounded-lg p-3 z-10 flex flex-col gap-y-2" style="transform: matrix(0.799513, -0.04, 0.04, 0.799513, 0, 0) translate(-58px, -88px)">
-    <template v-for="(item, idx) in flatTree" :key="idx">
-      <div
-        class="tree-item flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap text-[hsl(212,20%,23%)]"
-        :class="{ 'tree-folder': item.type === 'folder', 'tree-collapsed': item.collapsed }"
-        :style="{ paddingLeft: `${item.depth * 24}px` }"
-      >
-        <span class="truncate">{{ item.name }}</span>
-      </div>
-    </template>
-  </div>
   <div class="site-shell">
     <main class="content-column">
       <slot />
     </main>
   </div>
 
-  <div class="fixed z-10 scale-75 origin-bottom-left -left-5 bottom-[340px]">
-    <Keyboard87 />
-  </div>
-
-  <div class="fixed z-10 left-6 bottom-4">
-    <StandaloneMusicPlayer />
-  </div>
-
-  <div class="fixed z-10 calendar-side">
-    <DateCardWidget />
-  </div>
-
-  <div v-if="photoGalleryWidget" class="fixed z-10 gallery-side">
-    <PhotoGalleryWidget :widget="photoGalleryWidget" :normalized="photoGalleryNormalized" />
+  <div
+    v-for="corner in widgetCorners"
+    :key="corner"
+    class="widget-zone"
+    :class="`widget-zone-${corner}`"
+  >
+    <div
+      v-for="widget in widgetsByCorner[corner]"
+      :key="widget.id"
+      class="widget-positioned"
+      :class="`widget-type-${widget.type}`"
+      :style="{ '--widget-rotation': `${getWidgetRotation(widget)}deg` }"
+    >
+      <div v-if="widget.type === 'PROJECT_TREE'" class="project-tree-widget rounded-lg p-3">
+        <template v-for="(item, idx) in flatTree" :key="idx">
+          <div
+            class="tree-item flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap text-[hsl(212,20%,23%)]"
+            :class="{ 'tree-folder': item.type === 'folder', 'tree-collapsed': item.collapsed }"
+            :style="{ paddingLeft: `${item.depth * 24}px` }"
+          >
+            <span class="truncate">{{ item.name }}</span>
+          </div>
+        </template>
+      </div>
+      <div v-else-if="widget.type === 'KEYBOARD'" class="keyboard-widget">
+        <Keyboard87 />
+      </div>
+      <StandaloneMusicPlayer v-else-if="widget.type === 'MUSIC_PLAYER'" />
+      <DateCardWidget
+        v-else-if="widget.type === 'DATE_CARD'"
+        :widget="widget"
+        :normalized="normalizeWidget(widget)"
+      />
+      <PhotoGalleryWidget
+        v-else-if="widget.type === 'PHOTO_GALLERY'"
+        :widget="widget"
+        :normalized="normalizeWidget(widget)"
+      />
+      <WidgetRenderer v-else :widget="widget" />
+    </div>
   </div>
 
   <PullCordThemeToggle />
@@ -135,20 +186,6 @@ const photoGalleryNormalized = computed(() =>
   padding: 24px 0 0;
 }
 
-.shell-column {
-  display: grid;
-  align-content: start;
-  gap: 16px;
-  width: 260px;
-}
-
-.shell-column-left,
-.shell-column-right {
-  position: sticky;
-  top: 24px;
-  height: fit-content;
-}
-
 .content-column {
   min-width: 0;
 }
@@ -165,10 +202,6 @@ const photoGalleryNormalized = computed(() =>
     width: var(--center-column);
   }
 
-  .shell-column-left,
-  .shell-column-right {
-    display: none;
-  }
 }
 
 @media (max-width: 680px) {
@@ -194,22 +227,73 @@ const photoGalleryNormalized = computed(() =>
   transform: rotate(-90deg);
 }
 
-.calendar-side {
-  top: 50%;
-  right: -40px;
-  width: 260px;
-  transform: translateY(-50%) rotate(-2deg);
+.widget-zone {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  max-height: calc(100vh - 40px);
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
 }
 
-.gallery-side {
-  right: -8px;
-  bottom: 52px;
+.widget-zone-left-top {
+  top: 22px;
+  left: 24px;
+  align-items: flex-start;
+}
+
+.widget-zone-right-top {
+  top: 82px;
+  right: 20px;
+  align-items: flex-end;
+}
+
+.widget-zone-left-bottom {
+  bottom: 16px;
+  left: 24px;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+}
+
+.widget-zone-right-bottom {
+  right: 20px;
+  bottom: 28px;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+.widget-positioned {
+  pointer-events: auto;
+  transform: rotate(var(--widget-rotation, 0deg));
+  transform-origin: center;
+}
+
+.widget-type-DATE_CARD {
+  width: 260px;
+}
+
+.widget-type-PHOTO_GALLERY {
   transform-origin: bottom right;
 }
 
+.project-tree-widget {
+  transform: scale(.8);
+  transform-origin: top left;
+}
+
+.keyboard-widget {
+  margin-left: -44px;
+  transform: scale(.75);
+  transform-origin: bottom left;
+}
+
 @media (max-width: 1320px) {
-  .calendar-side,
-  .gallery-side {
+  .widget-type-DATE_CARD,
+  .widget-type-PHOTO_GALLERY,
+  .widget-type-HITOKOTO,
+  .widget-type-FRIEND_LINKS,
+  .widget-type-PROFILE {
     display: none;
   }
 }

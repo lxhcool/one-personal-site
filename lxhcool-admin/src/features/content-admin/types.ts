@@ -8,6 +8,7 @@ export type PublishStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN'
 export type PostType = 'ARTICLE' | 'MOMENT'
 export type CategoryType = 'POST' | 'FRIEND_LINK'
 export type WidgetArea = 'LEFT' | 'RIGHT'
+export type WidgetVerticalPosition = 'TOP' | 'BOTTOM'
 export type WidgetType =
   | 'MUSIC_PLAYER'
   | 'HITOKOTO'
@@ -15,6 +16,8 @@ export type WidgetType =
   | 'PROFILE'
   | 'DATE_CARD'
   | 'PHOTO_GALLERY'
+  | 'PROJECT_TREE'
+  | 'KEYBOARD'
 
 export type AdminUser = {
   id: string
@@ -92,6 +95,8 @@ export type ContentCategory = {
 export type SiteWidget = {
   id: string
   area: WidgetArea
+  verticalPosition: WidgetVerticalPosition
+  rotation: number
   type: WidgetType
   title?: string | null
   enabled: boolean
