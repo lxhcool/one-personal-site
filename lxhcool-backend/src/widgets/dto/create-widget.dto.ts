@@ -10,6 +10,18 @@ export class CreateWidgetDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(-1000)
+  @Max(3000)
+  horizontalOffset?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-1000)
+  @Max(3000)
+  verticalOffset?: number;
+
+  @IsOptional()
+  @IsNumber()
   @Min(-45)
   @Max(45)
   rotation?: number;

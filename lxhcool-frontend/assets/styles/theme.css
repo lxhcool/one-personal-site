@@ -20,7 +20,7 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page-bg: #0d1317;
+  --page-bg: #0c0a09;
   --card-bg: #182126;
   --text: #d9dcda;
   --text-muted: #909b9f;
@@ -39,18 +39,7 @@ body {
 }
 
 body::before {
-  content: "";
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 75rem;
-  height: 56.25rem;
-  background-color: rgba(221, 210, 193, 0.38);
-  border-radius: 50%;
-  filter: blur(10rem);
-  transform: matrix(0.891007, 0.45399, -0.45399, 0.891007, -600, -450);
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
 
 a {
@@ -353,10 +342,6 @@ button {
 
 :root[data-theme='dark'] .photo-tile--empty .photo-tile__body {
   background: rgba(43, 55, 61, .34) !important;
-}
-
-:root[data-theme='dark'] body::before {
-  background-color: rgba(43, 61, 70, 0.34);
 }
 
 :root[data-theme='dark'] body {

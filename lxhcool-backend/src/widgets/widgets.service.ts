@@ -35,6 +35,8 @@ export class WidgetsService {
       data: {
         area: dto.area,
         verticalPosition: dto.verticalPosition ?? 'TOP',
+        horizontalOffset: dto.horizontalOffset ?? (dto.area === 'LEFT' ? 24 : 20),
+        verticalOffset: dto.verticalOffset ?? (dto.area === 'RIGHT' ? 82 : 22),
         rotation: dto.rotation ?? 0,
         type: dto.type,
         title: dto.title?.trim() || null,
@@ -51,6 +53,8 @@ export class WidgetsService {
       data: {
         area: dto.area,
         verticalPosition: dto.verticalPosition,
+        horizontalOffset: dto.horizontalOffset,
+        verticalOffset: dto.verticalOffset,
         rotation: dto.rotation,
         type: dto.type,
         title: dto.title === undefined ? undefined : dto.title?.trim() || null,

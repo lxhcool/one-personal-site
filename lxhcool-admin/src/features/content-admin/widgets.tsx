@@ -357,7 +357,22 @@ export function WidgetsPage() {
   const updateWidget = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
       widgetsApi.update(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-widgets'] })
+      const previous = queryClient.getQueryData<SiteWidget[]>(['admin-widgets'])
+      queryClient.setQueryData<SiteWidget[]>(['admin-widgets'], (current) =>
+        current?.map((widget) =>
+          widget.id === id ? ({ ...widget, ...payload } as SiteWidget) : widget
+        )
+      )
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['admin-widgets'], context.previous)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
   })
 
   if (widgets.isError) throw widgets.error
@@ -410,6 +425,8 @@ export function WidgetsPage() {
       createWidget.mutate({
         area: targetArea,
         verticalPosition: 'TOP',
+        horizontalOffset: targetArea === 'LEFT' ? 24 : 20,
+        verticalOffset: targetArea === 'LEFT' ? 22 : 82,
         rotation: 0,
         type: data.type,
         title: template?.label,
@@ -785,7 +802,23 @@ function WidgetPlacementEditor({
   onUpdate: (payload: Record<string, unknown>) => void
 }) {
   const verticalPosition = widget.verticalPosition ?? 'TOP'
+  const horizontalOffset = Number.isFinite(widget.horizontalOffset)
+    ? widget.horizontalOffset
+    : widget.area === 'LEFT'
+      ? 24
+      : 20
+  const verticalOffset = Number.isFinite(widget.verticalOffset)
+    ? widget.verticalOffset
+    : verticalPosition === 'TOP'
+      ? widget.area === 'RIGHT'
+        ? 82
+        : 22
+      : widget.area === 'LEFT'
+        ? 16
+        : 28
   const rotation = Number.isFinite(widget.rotation) ? widget.rotation : 0
+  const horizontalProperty = widget.area === 'LEFT' ? 'left' : 'right'
+  const verticalProperty = verticalPosition === 'TOP' ? 'top' : 'bottom'
 
   return (
     <div className='mt-3 grid gap-3 border-t pt-3'>
@@ -816,11 +849,77 @@ function WidgetPlacementEditor({
         })}
       </div>
 
-      <div className='grid grid-cols-[1fr_104px] items-center gap-3'>
-        <div>
-          <Label htmlFor={`widget-rotation-${widget.id}`}>旋转角度</Label>
-          <p className='mt-1 text-xs text-muted-foreground'>支持 -45° 到 45°</p>
+      <div className='grid grid-cols-3 gap-2'>
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`widget-horizontal-${widget.id}`} className='font-mono text-xs'>
+            {horizontalProperty}
+          </Label>
+          <div className='relative'>
+            <Input
+              key={`${widget.id}-${horizontalProperty}-${horizontalOffset}`}
+              id={`widget-horizontal-${widget.id}`}
+              type='number'
+              min={-1000}
+              max={3000}
+              step={1}
+              defaultValue={horizontalOffset}
+              disabled={updating}
+              className='pr-7 text-right font-mono'
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur()
+              }}
+              onBlur={(event) => {
+                const nextOffset = Math.max(
+                  -1000,
+                  Math.min(3000, Number(event.currentTarget.value) || 0)
+                )
+                if (nextOffset !== horizontalOffset) {
+                  onUpdate({ horizontalOffset: nextOffset })
+                }
+              }}
+            />
+            <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
+              px
+            </span>
+          </div>
         </div>
+
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`widget-vertical-${widget.id}`} className='font-mono text-xs'>
+            {verticalProperty}
+          </Label>
+          <div className='relative'>
+            <Input
+              key={`${widget.id}-${verticalProperty}-${verticalOffset}`}
+              id={`widget-vertical-${widget.id}`}
+              type='number'
+              min={-1000}
+              max={3000}
+              step={1}
+              defaultValue={verticalOffset}
+              disabled={updating}
+              className='pr-7 text-right font-mono'
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur()
+              }}
+              onBlur={(event) => {
+                const nextOffset = Math.max(
+                  -1000,
+                  Math.min(3000, Number(event.currentTarget.value) || 0)
+                )
+                if (nextOffset !== verticalOffset) {
+                  onUpdate({ verticalOffset: nextOffset })
+                }
+              }}
+            />
+            <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
+              px
+            </span>
+          </div>
+        </div>
+
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`widget-rotation-${widget.id}`} className='text-xs'>旋转</Label>
         <div className='relative'>
           <Input
             key={`${widget.id}-${rotation}`}
@@ -831,7 +930,10 @@ function WidgetPlacementEditor({
             step={1}
             defaultValue={rotation}
             disabled={updating}
-            className='pr-7 text-right'
+            className='pr-7 text-right font-mono'
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur()
+            }}
             onBlur={(event) => {
               const nextRotation = Math.max(
                 -45,
@@ -846,7 +948,12 @@ function WidgetPlacementEditor({
             °
           </span>
         </div>
+        </div>
       </div>
+      <p className='font-mono text-[11px] text-muted-foreground'>
+        {horizontalProperty}: {horizontalOffset}px; {verticalProperty}: {verticalOffset}px;
+      </p>
+      <p className='text-[11px] text-muted-foreground'>修改后按 Enter 或离开输入框自动保存。</p>
     </div>
   )
 }

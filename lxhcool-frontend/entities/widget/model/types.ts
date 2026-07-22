@@ -15,6 +15,8 @@ export type SiteWidget = {
   id: string;
   area: WidgetArea;
   verticalPosition: WidgetVerticalPosition;
+  horizontalOffset: number;
+  verticalOffset: number;
   rotation: number;
   type: WidgetType;
   title: string | null;

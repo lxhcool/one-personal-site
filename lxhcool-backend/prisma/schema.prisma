@@ -114,6 +114,8 @@ model SiteWidget {
   id               String                 @id @default(cuid())
   area             WidgetArea
   verticalPosition WidgetVerticalPosition @default(TOP)
+  horizontalOffset Float                  @default(20)
+  verticalOffset   Float                  @default(20)
   rotation         Float                  @default(0)
   type             WidgetType
   title            String?

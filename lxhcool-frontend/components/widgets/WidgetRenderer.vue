@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ListMusic, Pause, Play, RefreshCw, SkipBack, SkipForward, X } from '@lucide/vue';
+import { ListMusic, Pause, Play, Shuffle, SkipBack, SkipForward, X } from '@lucide/vue';
 import { listPublicFriendLinks } from '~/entities/friend-link/api/friendLinkApi';
 import type { SiteWidget } from '~/entities/widget/model/types';
 import ProjectTreeWidget from './ui/ProjectTreeWidget.vue';
@@ -452,6 +452,7 @@ onBeforeUnmount(() => {
     :class="[
       { 'music-widget-card': widget.type === 'MUSIC_PLAYER' },
       { 'date-widget-card': widget.type === 'DATE_CARD' },
+      { 'hitokoto-widget-card': widget.type === 'HITOKOTO' },
       widget.type === 'MUSIC_PLAYER' ? 'u-shadow-none' : '',
     ]"
   >
@@ -566,22 +567,27 @@ onBeforeUnmount(() => {
     <template v-else-if="widget.type === 'HITOKOTO'">
       <div class="hitokoto-card">
         <div class="hitokoto-body">
-          <button
-            type="button"
-            class="hitokoto-refresh"
-            :class="{ loading: isHitokotoPending }"
-            aria-label="Refresh hitokoto"
-            :disabled="isHitokotoPending"
-            @click="handleRefreshHitokoto"
-          >
-            <RefreshCw :size="14" stroke-width="1.8" />
-          </button>
           <Transition name="hitokoto-text" mode="out-in">
-            <strong :key="hitokotoText">{{ hitokotoText }}</strong>
+            <p :key="hitokotoText" class="hitokoto-content">{{ hitokotoText }}</p>
           </Transition>
-          <Transition name="hitokoto-source" mode="out-in">
-            <span v-if="hitokotoSource" :key="hitokotoSource" class="muted">{{ hitokotoSource }}</span>
-          </Transition>
+          <div class="hitokoto-foot">
+            <Transition name="hitokoto-source" mode="out-in">
+              <span v-if="hitokotoSource" :key="hitokotoSource" class="hitokoto-source">
+                — {{ hitokotoSource }}
+              </span>
+            </Transition>
+            <button
+              type="button"
+              class="hitokoto-refresh"
+              :class="{ loading: isHitokotoPending }"
+              aria-label="换一句"
+              :disabled="isHitokotoPending"
+              @click="handleRefreshHitokoto"
+            >
+              <Shuffle :size="12" stroke-width="1.7" />
+              <span>换一句</span>
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -674,6 +680,15 @@ onBeforeUnmount(() => {
   box-shadow: none;
 }
 
+.hitokoto-widget-card {
+  width: min(272px, calc(100vw - 32px));
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .widget-heading {
   margin-bottom: 12px;
   font-weight: 700;
@@ -694,33 +709,40 @@ p {
 }
 
 .hitokoto-card {
+  position: relative;
   overflow: hidden;
-  margin: -16px;
-  border-radius: inherit;
-  background: #fff;
+  border-color: hsl(212 14% 74% / var(--tw-border-opacity, 1));
+  border-style: dashed;
+  border-width: 1px;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .hitokoto-refresh {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
   border: 0;
-  border-radius: var(--radius);
-  background: #f5f6f8;
-  color: #303138;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(69, 62, 53, 0.52);
+  font-size: 10px;
+  line-height: 1;
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.16s ease,
+    color 0.16s ease,
+    opacity 0.16s ease;
 }
 
 .hitokoto-refresh:hover:not(:disabled) {
-  background: #eef1f6;
-  transform: translateY(-1px);
+  border-bottom-color: currentColor;
+  color: rgba(48, 43, 37, 0.76);
 }
 
 .hitokoto-refresh:disabled {
@@ -729,31 +751,56 @@ p {
 }
 
 .hitokoto-refresh.loading svg {
-  animation: hitokoto-refresh-spin 0.8s linear infinite;
+  animation: hitokoto-refresh-pulse 0.7s ease-in-out infinite alternate;
 }
 
 .hitokoto-body {
   position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 10px;
-  min-height: 126px;
-  padding: 18px 20px 20px;
+  gap: 12px;
+  min-height: 92px;
+  padding: 15px 16px 11px;
 }
 
-.hitokoto-body strong {
-  padding-right: 38px;
-  color: var(--text);
+.hitokoto-content {
+  margin: 0;
+  color: rgba(45, 42, 37, 0.82);
   font-size: 14px;
-  font-weight: 650;
-  line-height: 1.65;
+  font-weight: 500;
+  line-height: 1.7;
 }
 
-.hitokoto-body .muted {
-  justify-self: end;
-  align-self: end;
-  margin-top: 0;
-  text-align: right;
+.hitokoto-foot {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hitokoto-source {
+  color: rgba(78, 70, 60, 0.5);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+:global(:root[data-theme='dark']) .hitokoto-card {
+  --tw-border-opacity: 0.28;
+  background: transparent;
+}
+
+:global(:root[data-theme='dark']) .hitokoto-source,
+:global(:root[data-theme='dark']) .hitokoto-refresh {
+  color: rgba(210, 205, 197, 0.52);
+}
+
+:global(:root[data-theme='dark']) .hitokoto-content {
+  color: rgba(235, 231, 224, 0.82);
+}
+
+:global(:root[data-theme='dark']) .hitokoto-refresh:hover:not(:disabled) {
+  color: rgba(235, 231, 224, 0.76);
 }
 
 .hitokoto-text-enter-active,
@@ -768,13 +815,23 @@ p {
 .hitokoto-text-enter-from,
 .hitokoto-source-enter-from {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(6px);
 }
 
 .hitokoto-text-leave-to,
 .hitokoto-source-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hitokoto-refresh,
+  .hitokoto-text-enter-active,
+  .hitokoto-text-leave-active,
+  .hitokoto-source-enter-active,
+  .hitokoto-source-leave-active {
+    transition: none;
+  }
 }
 
 /* Profile Widget - New Card Style */
@@ -1275,12 +1332,14 @@ figcaption {
   }
 }
 
-@keyframes hitokoto-refresh-spin {
+@keyframes hitokoto-refresh-pulse {
   from {
-    transform: rotate(0deg);
+    opacity: 0.45;
+    transform: scale(0.92);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>

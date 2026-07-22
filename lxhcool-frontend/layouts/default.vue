@@ -6,11 +6,12 @@ import StandaloneMusicPlayer from '~/components/widgets/ui/StandaloneMusicPlayer
 import DateCardWidget from '~/components/widgets/ui/DateCardWidget.vue';
 import PhotoGalleryWidget from '~/components/widgets/ui/PhotoGalleryWidget.vue';
 import ImageLightbox from '~/components/media/ImageLightbox.vue';
+import WidgetRenderer from '~/components/widgets/WidgetRenderer.vue';
 import { useWidgetRegistry } from '~/components/widgets/strategies/useWidgetRegistry';
 import type { SiteWidget, WidgetArea, WidgetVerticalPosition } from '~/entities/widget/model/types';
 
 const theme = useState<'light' | 'dark'>('site-theme', () => 'light');
-const [{ data: widgetsData }, { data: currentUser }] = await Promise.all([
+const [{ data: widgetsData, refresh: refreshWidgets }, { data: currentUser }] = await Promise.all([
   useAsyncData('public-widgets', () => listPublicWidgets()),
   useAsyncData('current-user', () => getCurrentAdminUser()),
 ]);
@@ -61,11 +62,26 @@ const frontendTree: TreeNode = {
 
 const flatTree = flattenTree(frontendTree, 0).slice(1);
 
+function refreshWidgetPositions() {
+  void refreshWidgets();
+}
+
+function refreshVisibleWidgetPositions() {
+  if (document.visibilityState === 'visible') refreshWidgetPositions();
+}
+
 onMounted(() => {
   const renderedTheme = document.documentElement.dataset.theme;
   if (renderedTheme === 'dark' || renderedTheme === 'light') {
     theme.value = renderedTheme;
   }
+  window.addEventListener('focus', refreshWidgetPositions);
+  document.addEventListener('visibilitychange', refreshVisibleWidgetPositions);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', refreshWidgetPositions);
+  document.removeEventListener('visibilitychange', refreshVisibleWidgetPositions);
 });
 
 const { getStrategy } = useWidgetRegistry();
@@ -76,39 +92,26 @@ const widgets = computed(() => {
   return all.filter((w) => !getStrategy(w.type).requiresAuth);
 });
 
-type WidgetCorner = 'left-top' | 'left-bottom' | 'right-top' | 'right-bottom';
-
-const widgetCorners: WidgetCorner[] = [
-  'left-top',
-  'left-bottom',
-  'right-top',
-  'right-bottom',
-];
-
-const widgetsByCorner = computed<Record<WidgetCorner, SiteWidget[]>>(() => {
-  const groups: Record<WidgetCorner, SiteWidget[]> = {
-    'left-top': [],
-    'left-bottom': [],
-    'right-top': [],
-    'right-bottom': [],
-  };
-
-  for (const widget of widgets.value) {
-    groups[getWidgetCorner(widget)].push(widget);
-  }
-
-  for (const corner of widgetCorners) {
-    groups[corner].sort((a, b) => a.sortOrder - b.sortOrder);
-  }
-
-  return groups;
-});
-
-function getWidgetCorner(widget: SiteWidget): WidgetCorner {
+function getWidgetPosition(widget: SiteWidget) {
   const area: WidgetArea = widget.area === 'RIGHT' ? 'RIGHT' : 'LEFT';
   const verticalPosition: WidgetVerticalPosition =
     widget.verticalPosition === 'BOTTOM' ? 'BOTTOM' : 'TOP';
-  return `${area.toLowerCase()}-${verticalPosition.toLowerCase()}` as WidgetCorner;
+  const rawHorizontalOffset = Number(widget.horizontalOffset);
+  const rawVerticalOffset = Number(widget.verticalOffset);
+  const horizontalOffset = Number.isFinite(rawHorizontalOffset)
+    ? Math.max(-1000, Math.min(3000, rawHorizontalOffset))
+    : area === 'LEFT' ? 24 : 20;
+  const verticalOffset = Number.isFinite(rawVerticalOffset)
+    ? Math.max(-1000, Math.min(3000, rawVerticalOffset))
+    : verticalPosition === 'TOP'
+      ? area === 'RIGHT' ? 82 : 22
+      : area === 'LEFT' ? 16 : 28;
+
+  return {
+    '--widget-rotation': `${getWidgetRotation(widget)}deg`,
+    [area === 'LEFT' ? 'left' : 'right']: `${horizontalOffset}px`,
+    [verticalPosition === 'TOP' ? 'top' : 'bottom']: `${verticalOffset}px`,
+  };
 }
 
 function getWidgetRotation(widget: SiteWidget) {
@@ -129,19 +132,13 @@ function normalizeWidget(widget: SiteWidget) {
   </div>
 
   <div
-    v-for="corner in widgetCorners"
-    :key="corner"
-    class="widget-zone"
-    :class="`widget-zone-${corner}`"
+    v-for="widget in widgets"
+    :key="widget.id"
+    class="widget-positioned"
+    :class="`widget-type-${widget.type}`"
+    :style="getWidgetPosition(widget)"
   >
-    <div
-      v-for="widget in widgetsByCorner[corner]"
-      :key="widget.id"
-      class="widget-positioned"
-      :class="`widget-type-${widget.type}`"
-      :style="{ '--widget-rotation': `${getWidgetRotation(widget)}deg` }"
-    >
-      <div v-if="widget.type === 'PROJECT_TREE'" class="project-tree-widget rounded-lg p-3">
+      <div v-if="widget.type === 'PROJECT_TREE'" class="project-tree-widget flex flex-col gap-y-2 rounded-lg p-3">
         <template v-for="(item, idx) in flatTree" :key="idx">
           <div
             class="tree-item flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap text-[hsl(212,20%,23%)]"
@@ -167,7 +164,6 @@ function normalizeWidget(widget: SiteWidget) {
         :normalized="normalizeWidget(widget)"
       />
       <WidgetRenderer v-else :widget="widget" />
-    </div>
   </div>
 
   <PullCordThemeToggle />
@@ -227,43 +223,9 @@ function normalizeWidget(widget: SiteWidget) {
   transform: rotate(-90deg);
 }
 
-.widget-zone {
+.widget-positioned {
   position: fixed;
   z-index: 10;
-  display: flex;
-  max-height: calc(100vh - 40px);
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: none;
-}
-
-.widget-zone-left-top {
-  top: 22px;
-  left: 24px;
-  align-items: flex-start;
-}
-
-.widget-zone-right-top {
-  top: 82px;
-  right: 20px;
-  align-items: flex-end;
-}
-
-.widget-zone-left-bottom {
-  bottom: 16px;
-  left: 24px;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-}
-
-.widget-zone-right-bottom {
-  right: 20px;
-  bottom: 28px;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-}
-
-.widget-positioned {
   pointer-events: auto;
   transform: rotate(var(--widget-rotation, 0deg));
   transform-origin: center;
@@ -278,8 +240,15 @@ function normalizeWidget(widget: SiteWidget) {
 }
 
 .project-tree-widget {
+  font-family: Apfel Grotezk, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
   transform: scale(.8);
   transform-origin: top left;
+}
+
+.project-tree-widget .tree-item {
+  min-height: 22.5px;
 }
 
 .keyboard-widget {
