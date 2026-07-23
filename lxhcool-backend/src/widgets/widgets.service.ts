@@ -10,13 +10,17 @@ export class WidgetsService {
 
   listPublic() {
     return this.prisma.siteWidget.findMany({
-      where: { enabled: true },
+      where: {
+        enabled: true,
+        type: { notIn: ['FRIEND_LINKS', 'PROFILE'] },
+      },
       orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
   }
 
   listAdmin() {
     return this.prisma.siteWidget.findMany({
+      where: { type: { notIn: ['FRIEND_LINKS', 'PROFILE'] } },
       orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
   }

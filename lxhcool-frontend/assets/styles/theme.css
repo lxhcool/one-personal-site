@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --page-bg: #efe4d4;
+  --page-bg: #f0f2f4;
   --card-bg: #ffffff;
   --text: #1f2328;
   --text-muted: #6b7280;
@@ -67,6 +67,10 @@ button {
 :root[data-theme='dark'] .window-bar {
   border-color: rgba(132, 151, 157, 0.16) !important;
   background: linear-gradient(180deg, rgba(45, 57, 62, 0.82), rgba(22, 31, 36, 0.92)) !important;
+}
+
+:root[data-theme='dark'] .window-status {
+  background: transparent;
 }
 
 :root[data-theme='dark'] .window-status,
@@ -138,9 +142,9 @@ button {
 }
 
 :root[data-theme='dark'] .article-toc {
-  border-color: rgba(132, 151, 157, 0.22) !important;
-  background: linear-gradient(145deg, rgba(75, 94, 99, 0.16), transparent 42%), rgba(24, 35, 40, 0.88) !important;
-  box-shadow: 8px 11px 24px rgba(0, 0, 0, 0.28) !important;
+  border-color: rgba(132, 151, 157, 0.18) !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 :root[data-theme='dark'] .toc-item {
@@ -150,6 +154,11 @@ button {
 :root[data-theme='dark'] .toc-item:hover {
   background: rgba(77, 154, 117, 0.1) !important;
   color: #8dc9aa !important;
+}
+
+:root[data-theme='dark'] .toc-item.active {
+  background: rgba(77, 154, 117, 0.13) !important;
+  color: #9bd8b7 !important;
 }
 
 :root[data-theme='dark'] .post-content pre,
@@ -196,6 +205,30 @@ button {
 
 :root[data-theme='dark'] .post-content li::marker {
   color: #789784 !important;
+}
+
+:root[data-theme='dark'] .moment-entry + .moment-entry {
+  border-color: rgba(145, 167, 172, 0.12) !important;
+}
+
+:root[data-theme='dark'] .moment-author strong {
+  color: #aab4b6 !important;
+}
+
+:root[data-theme='dark'] .moment-copy {
+  color: #c2cacc !important;
+}
+
+:root[data-theme='dark'] .moment-index {
+  border-color: rgba(145, 167, 172, 0.14) !important;
+}
+
+:root[data-theme='dark'] .moment-index strong {
+  color: #aeb8ba !important;
+}
+
+:root[data-theme='dark'] .moment-photos button {
+  background: #11191d !important;
 }
 
 :root[data-theme='dark'] .moment-music-card {

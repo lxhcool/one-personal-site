@@ -9,18 +9,27 @@ type PageShellProps = {
   title: string
   description?: string
   actions?: React.ReactNode
+  fluid?: boolean
+  fixed?: boolean
   children: React.ReactNode
 }
 
 export function PageShell({
   title,
-  description,
   actions,
+  fluid,
+  fixed,
   children,
 }: PageShellProps) {
   return (
     <>
       <Header>
+        <h1 className='min-w-0 flex-1 truncate text-xl font-bold tracking-tight sm:text-2xl'>
+          {title}
+        </h1>
+        {actions ? (
+          <div className='flex shrink-0 items-center gap-2'>{actions}</div>
+        ) : null}
         <div className='ms-auto flex min-w-0 items-center gap-2'>
           <Search className='hidden flex-none sm:inline-flex sm:w-44 lg:w-56' />
           <ThemeSwitch />
@@ -28,16 +37,7 @@ export function PageShell({
           <ProfileDropdown />
         </div>
       </Header>
-      <Main>
-        <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-          <div>
-            <h1 className='text-2xl font-bold tracking-tight'>{title}</h1>
-            {description ? (
-              <p className='text-muted-foreground'>{description}</p>
-            ) : null}
-          </div>
-          {actions ? <div className='flex items-center gap-2'>{actions}</div> : null}
-        </div>
+      <Main fluid={fluid} fixed={fixed}>
         {children}
       </Main>
     </>

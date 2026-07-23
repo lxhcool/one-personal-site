@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ExternalLink } from '@lucide/vue';
 import { requestPublicApi } from '~/shared/api/client';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 
@@ -12,22 +13,25 @@ const audioRef = ref<HTMLAudioElement | null>(null);
 const activeEmbedUrl = ref('');
 const isPlaying = ref(false);
 
-const title = computed(() => readString('title') || '音乐');
-const artist = computed(() => readString('artist') || '未知歌手');
 const audioUrl = computed(() => resolveAssetUrl(readString('audioUrl')));
 const embedUrl = computed(() => readString('embedUrl'));
 const externalUrl = computed(() => readString('externalUrl'));
 const metadataUrl = computed(() => externalUrl.value || embedUrl.value);
+const sourceLabel = computed(() => readString('source').trim().toUpperCase() || 'AUDIO');
+
 const { data: neteaseMetadata } = useAsyncData(
   `moment-music-metadata-${trackIdSeed()}`,
   () =>
     metadataUrl.value
-      ? requestPublicApi<{ cover: string }>(
+      ? requestPublicApi<{ title: string; artist: string; cover: string }>(
           `/public/music/netease/metadata?url=${encodeURIComponent(metadataUrl.value)}`,
-        ).catch(() => ({ cover: '' }))
-      : Promise.resolve({ cover: '' }),
+        ).catch(() => ({ title: '', artist: '', cover: '' }))
+      : Promise.resolve({ title: '', artist: '', cover: '' }),
   { watch: [metadataUrl] },
 );
+
+const title = computed(() => readString('title') || neteaseMetadata.value?.title || '音乐');
+const artist = computed(() => readString('artist') || neteaseMetadata.value?.artist || '网易云音乐');
 const coverUrl = computed(
   () =>
     resolveAssetUrl(readString('cover')) ??
@@ -82,26 +86,67 @@ function resolveAssetUrl(url?: string | null) {
 </script>
 
 <template>
-  <section class="moment-music-card" :class="{ 'is-playing': isPlaying }">
-    <div class="music-cover">
+  <section
+    class="moment-music-card"
+    :class="{ 'is-playing': isPlaying }"
+    :aria-label="`音乐：${title}，${artist}`"
+  >
+    <div class="music-cover" aria-hidden="true">
       <img v-if="coverUrl" :src="coverUrl" alt="" />
-      <span v-else>M</span>
+      <span v-else>{{ title.slice(0, 1) }}</span>
     </div>
 
     <div class="music-main">
-      <strong>{{ title }}</strong>
-      <span>{{ artist }}</span>
+      <div class="music-kicker">
+        <span class="equalizer" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        <span>{{ sourceLabel }} AUDIO</span>
+      </div>
+
+      <strong :title="title">{{ title }}</strong>
+      <span class="music-artist" :title="artist">{{ artist }}</span>
     </div>
 
-    <button
-      type="button"
-      class="play-button u-shadow-control"
-      :aria-label="isPlaying ? '暂停音乐' : '播放音乐'"
-      @click="togglePlay"
-    >
-      <span v-if="isPlaying">Ⅱ</span>
-      <span v-else>▶</span>
-    </button>
+    <div class="music-actions">
+      <a
+        v-if="externalUrl"
+        class="source-link"
+        :href="externalUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="在音乐平台打开"
+        title="在音乐平台打开"
+      >
+        <ExternalLink :size="13" :stroke-width="1.8" />
+      </a>
+
+      <button
+        type="button"
+        class="play-button"
+        :aria-label="isPlaying ? '暂停音乐' : '播放音乐'"
+        @click="togglePlay"
+      >
+        <svg class="playback-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            v-if="isPlaying"
+            d="M5.5 4.25v7.5M10.5 4.25v7.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.65"
+            stroke-linecap="round"
+          />
+          <path
+            v-else
+            d="M6.2 4.3c0-.52.58-.83 1.01-.54l5.16 3.58a.8.8 0 0 1 0 1.32l-5.16 3.58a.65.65 0 0 1-1.01-.54V4.3Z"
+            fill="currentColor"
+          />
+        </svg>
+      </button>
+    </div>
 
     <audio
       v-if="audioUrl"
@@ -125,68 +170,52 @@ function resolveAssetUrl(url?: string | null) {
 .moment-music-card {
   position: relative;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 34px;
-  gap: 11px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  width: 360px;
-  max-width: 360px;
-  padding: 11px 12px;
-  border: 1px solid rgba(91, 100, 104, 0.2);
+  width: 312px;
+  max-width: 100%;
+  min-height: 60px;
+  padding: 7px;
+  overflow: hidden;
+  border: 0;
   border-radius: 7px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.36), transparent 38%),
-    linear-gradient(180deg, rgba(230, 232, 229, 0.92), rgba(204, 209, 207, 0.9));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.65),
-    inset 0 -2px 4px rgba(83, 93, 98, 0.08),
-    0 2px 0 rgba(164, 170, 168, 0.72),
-    4px 7px 13px rgba(73, 82, 86, 0.11);
-  transform: rotate(-0.35deg);
-  transform-origin: 22% 50%;
-}
-
-.moment-music-card::before,
-.moment-music-card::after {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #9ca3a1;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.55);
-  content: '';
-  opacity: 0.65;
-}
-
-.moment-music-card::before {
-  top: 5px;
-  left: 5px;
+  background: #f0f2f4;
+  box-shadow: none;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .moment-music-card::after {
-  right: 5px;
-  bottom: 5px;
+  content: none;
+}
+
+.moment-music-card:hover {
+  background: #eaedef;
 }
 
 .music-cover {
+  position: relative;
+  z-index: 1;
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   overflow: hidden;
-  border: 2px solid rgba(239, 241, 237, 0.82);
   border-radius: 5px;
-  background: #c9cfcd;
+  background: #dfe7e2;
   box-shadow:
-    2px 3px 0 rgba(135, 143, 142, 0.62),
-    3px 5px 8px rgba(67, 77, 81, 0.13),
-    inset 0 0 0 1px rgba(66, 76, 80, 0.12);
-  color: #667177;
+    0 3px 8px rgba(38, 51, 44, 0.09),
+    0 1px 2px rgba(38, 51, 44, 0.08);
+  color: #698075;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
 }
 
 .music-cover img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -194,85 +223,162 @@ function resolveAssetUrl(url?: string | null) {
 
 .music-main {
   position: relative;
+  z-index: 1;
   display: grid;
-  gap: 3px;
   min-width: 0;
-  padding-left: 10px;
 }
 
-.music-main::before {
-  position: absolute;
-  top: 5px;
-  left: 0;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #8d9895;
-  box-shadow: 0 0 0 2px rgba(91, 106, 99, 0.08);
-  content: '';
+.music-kicker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  color: #6f8378;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  line-height: 1;
 }
 
-.is-playing .music-main::before {
-  background: #4e9b76;
-  box-shadow: 0 0 0 2px rgba(78, 155, 118, 0.12), 0 0 7px rgba(78, 155, 118, 0.35);
+.equalizer {
+  display: flex;
+  align-items: end;
+  gap: 1.5px;
+  width: 11px;
+  height: 8px;
+}
+
+.equalizer i {
+  display: block;
+  width: 1.5px;
+  height: 3px;
+  border-radius: 1px;
+  background: #78a58d;
+  transform-origin: bottom;
+}
+
+.equalizer i:nth-child(2) {
+  height: 7px;
+}
+
+.equalizer i:nth-child(3) {
+  height: 5px;
+}
+
+.equalizer i:nth-child(4) {
+  height: 2px;
+}
+
+.is-playing .equalizer i {
+  animation: equalizer-pulse 680ms ease-in-out infinite alternate;
+  background: #438564;
+}
+
+.is-playing .equalizer i:nth-child(2) {
+  animation-delay: -420ms;
+}
+
+.is-playing .equalizer i:nth-child(3) {
+  animation-delay: -180ms;
+}
+
+.is-playing .equalizer i:nth-child(4) {
+  animation-delay: -540ms;
 }
 
 .music-main strong,
-.music-main span {
+.music-artist {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.music-main span {
-  color: #778187;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+.music-main strong {
+  color: #35443c;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
 }
 
-.music-main strong {
-  color: #465159;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.music-artist {
+  margin-top: 2px;
+  color: #7d8983;
+  font-size: 8.5px;
+  line-height: 1.25;
+}
+
+.music-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.source-link,
+.play-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    color 130ms ease,
+    background 130ms ease,
+    border-color 130ms ease,
+    transform 130ms ease;
+}
+
+.source-link {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  color: #8c9992;
+}
+
+.source-link:hover {
+  background: rgba(57, 79, 68, 0.06);
+  color: #4e6257;
 }
 
 .play-button {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgba(92, 102, 107, 0.22);
-  border-radius: 5px;
-  background:
-    linear-gradient(180deg, rgba(247, 248, 246, 0.9), rgba(208, 213, 211, 0.94));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    0 2px 0 rgba(151, 159, 157, 0.75),
-    0 5px 8px rgba(72, 82, 87, 0.12);
-  color: #5d686e;
-  cursor: pointer;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  line-height: 1;
-  transition: color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  width: 23px;
+  height: 23px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(65, 80, 72, 0.075);
+  box-shadow: none;
+  color: #496f5b;
+}
+
+.playback-icon {
+  display: block;
+  width: 11px;
+  height: 11px;
+  overflow: visible;
 }
 
 .play-button:hover {
-  color: #39454b;
+  background: rgba(73, 111, 91, 0.2);
+  color: #345944;
+  transform: scale(1.04);
 }
 
 .play-button:active {
-  box-shadow:
-    inset 0 2px 3px rgba(83, 94, 99, 0.12),
-    0 1px 0 rgba(151, 159, 157, 0.68);
-  transform: translateY(2px) scale(0.97);
+  transform: scale(0.95);
 }
 
+.source-link:focus-visible,
 .play-button:focus-visible {
-  outline: 2px solid rgba(78, 155, 118, 0.32);
+  outline: 2px solid rgba(77, 154, 117, 0.34);
   outline-offset: 3px;
+}
+
+.is-playing .play-button {
+  background: #496f5b;
+  box-shadow: none;
+  color: #fff;
 }
 
 .hidden-player,
@@ -285,110 +391,69 @@ audio {
   pointer-events: none;
 }
 
+:global(:root[data-theme='dark']) .moment-music-card {
+  background: #26322d;
+  box-shadow: none;
+}
+
+:global(:root[data-theme='dark']) .music-main strong {
+  color: #dce5e0;
+}
+
+:global(:root[data-theme='dark']) .music-artist {
+  color: #91a099;
+}
+
+:global(:root[data-theme='dark']) .music-kicker {
+  color: #84a393;
+}
+
+:global(:root[data-theme='dark']) .source-link {
+  color: #8fa198;
+}
+
+@keyframes equalizer-pulse {
+  from {
+    transform: scaleY(0.42);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
 @media (max-width: 420px) {
   .moment-music-card {
-    grid-template-columns: 48px minmax(0, 1fr) 32px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     gap: 9px;
-    width: 100%;
-    padding: 9px 10px;
+    width: 280px;
+    min-height: 58px;
+    padding: 7px;
   }
 
   .music-cover {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .source-link {
+    display: none;
   }
 
   .play-button {
-    width: 32px;
-    height: 32px;
+    width: 23px;
+    height: 23px;
   }
 }
 
-/* Quiet desk-widget treatment: translucent like the calendar and unobtrusive player. */
-.moment-music-card {
-  grid-template-columns: 52px minmax(0, 1fr) 32px;
-  gap: 11px;
-  width: 360px;
-  max-width: 100%;
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-  background: rgb(255 255 255 / 8%);
-  box-shadow:
-    0 6px 14px rgba(82, 66, 45, 0.045),
-    inset 0 1px 0 rgba(255, 250, 238, 0.3);
-  backdrop-filter: blur(12px);
-  transform: none;
-}
-
-.moment-music-card::before,
-.moment-music-card::after,
-.music-main::before {
-  display: none;
-}
-
-.music-cover {
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: 5px;
-  background: rgba(178, 185, 184, 0.42);
-  box-shadow: 0 2px 6px rgba(67, 77, 81, 0.08);
-  color: #6d777c;
-}
-
-.music-main {
-  gap: 3px;
-  padding-left: 0;
-}
-
-.music-main strong {
-  color: #4b565d;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.music-main span {
-  color: #7c858a;
-  font-size: 9px;
-}
-
-.play-button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid rgba(78, 87, 91, 0.12);
-  border-radius: 5px;
-  background: rgba(78, 87, 91, 0.055);
-  box-shadow: none;
-  color: #687277;
-  font-size: 10px;
-}
-
-.play-button:hover {
-  background: rgba(78, 87, 91, 0.1);
-  color: #4f5a60;
-}
-
-.play-button:active {
-  box-shadow: none;
-  transform: scale(0.96);
-}
-
-@media (max-width: 420px) {
-  .moment-music-card {
-    grid-template-columns: 48px minmax(0, 1fr) 30px;
-    width: 100%;
-    padding: 8px 9px;
-  }
-
-  .music-cover {
-    width: 48px;
-    height: 48px;
-  }
-
+@media (prefers-reduced-motion: reduce) {
+  .moment-music-card,
+  .source-link,
   .play-button {
-    width: 30px;
-    height: 30px;
+    transition: none;
+  }
+
+  .is-playing .equalizer i {
+    animation: none;
   }
 }
 </style>

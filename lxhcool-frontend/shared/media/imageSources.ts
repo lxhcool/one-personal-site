@@ -5,7 +5,7 @@ export type ThumbnailOptions = {
 };
 
 export function resolvePublicImageUrl(url: string, apiBaseUrl: string) {
-  if (/^https?:\/\//i.test(url) || !url.startsWith('/')) return url;
+  if (/^https?:\/\//i.test(url) || !url.startsWith('/') || url.startsWith('/images/')) return url;
 
   try {
     const apiUrl = new URL(apiBaseUrl);

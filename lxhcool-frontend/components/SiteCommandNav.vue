@@ -30,11 +30,11 @@ function isActive(to: string) {
 <style scoped>
 .file-tabs {
   display: flex;
-  height: 42px;
+  height: 46px;
   min-width: 0;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 4px;
   padding: 0;
   overflow-x: auto;
   border: 0;
@@ -49,56 +49,57 @@ function isActive(to: string) {
 .file-tab {
   position: relative;
   display: inline-flex;
-  height: 42px;
+  height: 30px;
   flex: 0 0 auto;
   align-items: center;
   gap: 7px;
-  padding: 0 11px;
+  padding: 0 10px;
   border: 0;
-  border-radius: 0;
-  color: #7e878c;
+  border-radius: 6px;
+  color: #7d8790;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+  font-size: 9.5px;
   letter-spacing: 0.015em;
   transition: color 130ms ease, background 130ms ease, transform 130ms ease;
 }
 
 .file-status {
-  width: 5px;
-  height: 5px;
-  flex: 0 0 5px;
+  width: 4px;
+  height: 4px;
+  flex: 0 0 4px;
   border-radius: 50%;
-  background: #a2a9a7;
-  opacity: 0.42;
+  background: #4d9a75;
+  opacity: 0;
   transition: background 130ms ease, box-shadow 130ms ease, opacity 130ms ease;
 }
 
 .file-tab:hover {
-  background: rgba(235, 228, 215, 0.24);
-  color: #535f66;
+  background: rgba(11, 15, 19, 0.035);
+  color: #46515a;
 }
 
 .file-tab.active {
-  background: rgba(235, 228, 215, 0.34);
-  color: #3f4b52;
+  background: transparent;
+  color: #26313a;
+  font-weight: 600;
   transform: none;
 }
 
 .file-tab.active::after {
   position: absolute;
-  bottom: 0;
+  bottom: -6px;
   left: 50%;
-  width: 20px;
+  width: 16px;
   height: 2px;
   border-radius: 2px 2px 0 0;
-  background: rgba(77, 154, 117, 0.62);
+  background: #4d9a75;
   content: '';
   transform: translateX(-50%);
 }
 
 .file-tab.active .file-status {
   background: #4d9a75;
-  box-shadow: 0 0 0 3px rgba(77, 154, 117, 0.1);
+  box-shadow: 0 0 0 3px rgba(77, 154, 117, 0.08);
   opacity: 1;
 }
 
@@ -108,8 +109,8 @@ function isActive(to: string) {
 }
 
 @media (max-width: 560px) {
-  .file-tabs { height: 42px; justify-content: start; }
-  .file-tab { height: 42px; padding-inline: 8px; font-size: 8px; }
+  .file-tabs { height: 46px; justify-content: start; }
+  .file-tab { height: 30px; padding-inline: 8px; font-size: 8.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

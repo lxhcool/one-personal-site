@@ -1,21 +1,34 @@
 <script setup lang="ts">
+import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
+
 defineProps<{
   path: string;
   title?: string;
   status?: string;
 }>();
+
+const { adminUrl } = getRequiredPublicRuntimeConfig();
 </script>
 
 <template>
   <section class="workbench-window">
     <header class="window-bar">
-      <span class="window-controls" aria-hidden="true">
-        <span class="control control-close" />
-        <span class="control control-minimize" />
-        <span class="control control-expand" />
+      <span class="window-controls">
+        <span class="control control-close" aria-hidden="true" />
+        <span class="control control-minimize" aria-hidden="true" />
+        <a
+          class="control control-expand control-admin"
+          :href="adminUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="在新标签页打开管理后台"
+          title="管理后台"
+        />
       </span>
       <SiteCommandNav />
-      <span class="window-status">{{ status || 'online' }}</span>
+      <span class="window-actions">
+        <span class="window-status">{{ status || 'online' }}</span>
+      </span>
     </header>
 
     <div class="window-content">
@@ -40,29 +53,24 @@ defineProps<{
   flex-direction: column;
   isolation: isolate;
   overflow: clip;
-  border: 1px solid var(--paper-border);
-  border-radius: 9px;
-  background:
-    linear-gradient(145deg, rgba(255, 250, 240, 0.1), transparent 38%),
-    var(--paper-surface);
+  border: 0;
+  border-radius: 9px 9px 0 0;
+  background: #fff;
   box-shadow:
-    14px 18px 34px rgba(91, 72, 48, 0.075),
-    3px 5px 9px rgba(76, 64, 48, 0.045),
-    inset -1px -1px 0 rgba(92, 78, 59, 0.06),
-    inset 1px 1px 0 rgba(255, 251, 241, 0.38);
-  backdrop-filter: blur(2.5px) saturate(0.86);
+    rgba(0, 0, 0, 0) 0 0 0 0,
+    rgba(0, 0, 0, 0) 0 0 0 0,
+    rgba(11, 15, 19, 0.035) 0 8px 24px 0,
+    rgba(11, 15, 19, 0.04) 0 1px 2px 0;
 }
 
 .window-bar {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 82px;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
   align-items: center;
-  min-height: 42px;
+  min-height: 46px;
   padding: 0 12px;
-  border-bottom: 1px solid rgba(105, 91, 72, 0.12);
-  background:
-    linear-gradient(180deg, rgba(247, 241, 230, 0.58), rgba(211, 204, 192, 0.42)),
-    rgba(224, 217, 205, 0.62);
+  border-bottom: 1px solid rgba(11, 15, 19, 0.055);
+  background: #fff;
   font-family: 'IBM Plex Mono', monospace;
 }
 
@@ -84,12 +92,50 @@ defineProps<{
 .control-minimize { background: #d8b15d; }
 .control-expand { background: #6eaa79; }
 
+.control-admin {
+  position: relative;
+  display: block;
+  transition: box-shadow 140ms ease, transform 140ms ease;
+}
+
+.control-admin::before {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  content: '';
+}
+
+.control-admin:hover {
+  box-shadow:
+    0 0 0 3px rgba(110, 170, 121, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  transform: scale(1.06);
+}
+
+.control-admin:focus-visible {
+  outline: 2px solid rgba(77, 154, 117, 0.34);
+  outline-offset: 3px;
+}
+
 .window-status {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  justify-self: end;
+  padding: 0 3px;
+  background: transparent;
   color: #87919a;
   font-size: 9px;
   letter-spacing: 0.09em;
   text-align: right;
   text-transform: uppercase;
+}
+
+.window-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 6px;
 }
 
 .window-status::before {
@@ -99,7 +145,7 @@ defineProps<{
   margin-right: 5px;
   border-radius: 50%;
   background: #63a66f;
-  box-shadow: 0 0 0 3px rgba(99, 166, 111, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 166, 111, 0.08);
   content: '';
   vertical-align: 1px;
 }
@@ -139,10 +185,10 @@ defineProps<{
   .workbench-window {
     min-height: calc(100vh - 12px);
     min-height: calc(100dvh - 12px);
-    border-radius: 9px;
+    border-radius: 9px 9px 0 0;
   }
-  .window-bar { grid-template-columns: 54px minmax(0, 1fr) 40px; padding: 0 8px; }
-  .window-status { font-size: 0; }
+  .window-bar { grid-template-columns: 54px minmax(0, 1fr) auto; padding: 0 8px; }
+  .window-status { display: none; }
   .window-content { padding: 24px 19px 28px; }
   .content-heading { align-items: start; margin-bottom: 22px; }
   .content-heading h1 { font-size: 32px; }

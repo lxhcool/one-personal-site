@@ -1,39 +1,23 @@
-import { useState } from 'react'
-import { CSS } from '@dnd-kit/utilities'
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import {
   CalendarDays,
   FolderTree,
-  GripVertical,
   Images,
   Keyboard,
-  Link2,
+  Monitor,
+  Move,
   Music2,
   Quote,
-  Trash2,
-  UserRound,
+  RotateCcw,
+  Save,
+  Smartphone,
+  Tablet,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Card,
   CardContent,
@@ -42,7 +26,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageShell } from './components/page-shell'
-import { musicApi, uploadsApi, widgetsApi } from './api'
+import { widgetsApi } from './api'
+import { FRONTEND_PREVIEW_URL } from './env'
 import type {
   SiteWidget,
   WidgetArea,
@@ -70,28 +55,6 @@ const widgetTypes: {
     description: '从一言接口获取句子，可选分类过滤和背景图。',
     template: { text: '', from: '', categories: [] },
     icon: Quote,
-  },
-  {
-    value: 'FRIEND_LINKS',
-    label: '友情链接',
-    description: '展示指定分类下可见的友情链接。',
-    template: { category: '', limit: 6, random: false },
-    icon: Link2,
-  },
-  {
-    value: 'PROFILE',
-    label: '个人信息',
-    description: '展示封面、头像、昵称、身份和社交链接。',
-    template: {
-      coverImage: '',
-      avatar: '',
-      name: '',
-      role: '',
-      bio: '',
-      socials: [],
-      stats: [],
-    },
-    icon: UserRound,
   },
   {
     value: 'DATE_CARD',
@@ -123,236 +86,24 @@ const widgetTypes: {
   },
 ]
 
-const typeLabels = Object.fromEntries(
-  widgetTypes.map((item) => [item.value, item.label])
-) as Record<WidgetType, string>
-
-type ActiveDrag =
-  | { kind: 'palette'; type: WidgetType }
-  | { kind: 'widget'; id: string }
-  | null
-
-type PlaylistSource = {
-  provider: 'netease'
-  url: string
-  id?: string
-  title?: string
-  cover?: string
-  trackCount?: number
-}
-
-type SocialPlatformKey =
-  | 'github'
-  | 'gitee'
-  | 'douyin'
-  | 'xiaohongshu'
-  | 'bilibili'
-  | 'netease-cloud-music'
-  | 'zhihu'
-  | 'juejin'
-  | 'csdn'
-  | 'weibo'
-  | 'telegram'
-  | 'discord'
-  | 'instagram'
-  | 'youtube'
-  | 'x'
-  | 'wechat'
-  | 'qq'
-  | 'custom'
-
-type SocialConfig = {
-  platform: SocialPlatformKey
-  label: string
-  url: string
-  icon: string
-  color: string
-  qrCode: string
-  enabled: boolean
-}
-
-const socialPlatforms: Array<{
-  key: SocialPlatformKey
-  label: string
-  icon: string
-  color: string
-  placeholder: string
-  qrCode?: boolean
-}> = [
-  {
-    key: 'github',
-    label: 'GitHub',
-    icon: 'github',
-    color: '#181717',
-    placeholder: 'https://github.com/username',
-  },
-  {
-    key: 'gitee',
-    label: 'Gitee',
-    icon: 'gitee',
-    color: '#C71D23',
-    placeholder: 'https://gitee.com/username',
-  },
-  {
-    key: 'douyin',
-    label: '抖音',
-    icon: 'tiktok',
-    color: '#000000',
-    placeholder: 'https://www.douyin.com/user/...',
-    qrCode: true,
-  },
-  {
-    key: 'xiaohongshu',
-    label: '小红书',
-    icon: 'xiaohongshu',
-    color: '#FF2442',
-    placeholder: 'https://www.xiaohongshu.com/user/profile/...',
-    qrCode: true,
-  },
-  {
-    key: 'bilibili',
-    label: '哔哩哔哩',
-    icon: 'bilibili',
-    color: '#00A1D6',
-    placeholder: 'https://space.bilibili.com/...',
-  },
-  {
-    key: 'netease-cloud-music',
-    label: '网易云音乐',
-    icon: 'neteasecloudmusic',
-    color: '#D43C33',
-    placeholder: 'https://music.163.com/#/user/home?id=...',
-  },
-  {
-    key: 'zhihu',
-    label: '知乎',
-    icon: 'zhihu',
-    color: '#0084FF',
-    placeholder: 'https://www.zhihu.com/people/...',
-  },
-  {
-    key: 'juejin',
-    label: '掘金',
-    icon: 'juejin',
-    color: '#1E80FF',
-    placeholder: 'https://juejin.cn/user/...',
-  },
-  {
-    key: 'csdn',
-    label: 'CSDN',
-    icon: 'csdn',
-    color: '#FC5531',
-    placeholder: 'https://blog.csdn.net/...',
-  },
-  {
-    key: 'weibo',
-    label: '微博',
-    icon: 'sinaweibo',
-    color: '#E6162D',
-    placeholder: 'https://weibo.com/...',
-    qrCode: true,
-  },
-  {
-    key: 'telegram',
-    label: 'Telegram',
-    icon: 'telegram',
-    color: '#26A5E4',
-    placeholder: 'https://t.me/username',
-  },
-  {
-    key: 'discord',
-    label: 'Discord',
-    icon: 'discord',
-    color: '#5865F2',
-    placeholder: 'https://discord.gg/...',
-  },
-  {
-    key: 'instagram',
-    label: 'Instagram',
-    icon: 'instagram',
-    color: '#E4405F',
-    placeholder: 'https://www.instagram.com/username',
-  },
-  {
-    key: 'youtube',
-    label: 'YouTube',
-    icon: 'youtube',
-    color: '#FF0000',
-    placeholder: 'https://www.youtube.com/@username',
-  },
-  {
-    key: 'x',
-    label: 'X',
-    icon: 'x',
-    color: '#000000',
-    placeholder: 'https://x.com/username',
-  },
-  {
-    key: 'wechat',
-    label: '微信',
-    icon: 'wechat',
-    color: '#07C160',
-    placeholder: '微信主页链接或留空',
-    qrCode: true,
-  },
-  {
-    key: 'qq',
-    label: 'QQ',
-    icon: 'tencentqq',
-    color: '#1EBAFC',
-    placeholder: 'QQ 主页链接或留空',
-    qrCode: true,
-  },
-  {
-    key: 'custom',
-    label: '自定义',
-    icon: '',
-    color: '#111827',
-    placeholder: 'https://example.com',
-    qrCode: true,
-  },
-]
-
 export function WidgetsPage() {
   const queryClient = useQueryClient()
-  const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    })
-  )
   const widgets = useQuery({
     queryKey: ['admin-widgets'],
     queryFn: widgetsApi.list,
   })
   const createWidget = useMutation({
     mutationFn: widgetsApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
-  })
-  const updateLayout = useMutation({
-    mutationFn: async (items: SiteWidget[]) => {
-      await Promise.all(
-        items.map((widget) => {
-          const verticalPosition = widget.verticalPosition ?? 'TOP'
-          const groupItems = items.filter(
-            (item) =>
-              item.area === widget.area &&
-              (item.verticalPosition ?? 'TOP') === verticalPosition
-          )
-          const index = groupItems.findIndex((item) => item.id === widget.id)
-          return widgetsApi.update(widget.id, {
-            area: widget.area,
-            verticalPosition,
-            sortOrder: index,
-          })
-        })
-      )
+    onSuccess: (created) => {
+      queryClient.setQueryData<SiteWidget[]>(['admin-widgets'], (current = []) => [
+        ...current.filter((widget) => widget.id !== created.id),
+        created,
+      ])
+      queryClient.invalidateQueries({ queryKey: ['admin-widgets'] })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
-  })
-  const removeWidget = useMutation({
-    mutationFn: widgetsApi.remove,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : '小工具启用失败，请重试')
+    },
   })
   const updateWidget = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
@@ -371,1209 +122,558 @@ export function WidgetsPage() {
       if (context?.previous) {
         queryClient.setQueryData(['admin-widgets'], context.previous)
       }
+      toast.error(_error instanceof Error ? _error.message : '小工具更新失败，请重试')
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
   })
+  const saveVisualLayout = useMutation({
+    mutationFn: async (changes: Record<string, Record<string, unknown>>) => {
+      await Promise.all(
+        Object.entries(changes).map(([id, payload]) =>
+          widgetsApi.update(id, payload)
+        )
+      )
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
+  })
 
   if (widgets.isError) throw widgets.error
-  if (createWidget.isError) throw createWidget.error
-  if (updateLayout.isError) throw updateLayout.error
-  if (removeWidget.isError) throw removeWidget.error
-  if (updateWidget.isError) throw updateWidget.error
-
   const rows = [...(widgets.data ?? [])]
+    .filter((widget) => widget.type !== 'FRIEND_LINKS' && widget.type !== 'PROFILE')
     .sort(
       (a, b) => a.sortOrder - b.sortOrder || a.updatedAt.localeCompare(b.updatedAt)
     )
-  const leftWidgets = rows.filter((widget) => widget.area === 'LEFT')
-  const rightWidgets = rows.filter((widget) => widget.area === 'RIGHT')
-  const usedTypes = new Set(rows.map((widget) => widget.type))
-
-  function handleDragStart(event: DragStartEvent) {
-    const data = event.active.data.current as ActiveDrag | undefined
-    if (data?.kind === 'palette' && usedTypes.has(data.type)) {
-      setActiveDrag(null)
-      return
-    }
-    setActiveDrag(data ?? null)
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    setActiveDrag(null)
-    if (!over) return
-
-    const data = active.data.current as ActiveDrag | undefined
-    const overId = String(over.id)
-    const overWidget = rows.find((widget) => widget.id === overId)
-    const targetArea = (overId === 'LEFT' || overId === 'RIGHT'
-      ? overId
-      : overWidget?.area) as WidgetArea | undefined
-
-    if (!targetArea) return
-
-    if (data?.kind === 'palette') {
-      if (usedTypes.has(data.type)) return
-
-      const template = widgetTypes.find((item) => item.value === data.type)
-      const targetCount = rows.filter(
-        (widget) =>
-          widget.area === targetArea &&
-          (widget.verticalPosition ?? 'TOP') === 'TOP'
-      ).length
-
-      createWidget.mutate({
-        area: targetArea,
-        verticalPosition: 'TOP',
-        horizontalOffset: targetArea === 'LEFT' ? 24 : 20,
-        verticalOffset: targetArea === 'LEFT' ? 22 : 82,
-        rotation: 0,
-        type: data.type,
-        title: template?.label,
-        enabled: true,
-        sortOrder: targetCount,
-        config: template?.template ?? {},
-      })
-      return
-    }
-
-    if (active.id === over.id) return
-
-    const activeWidget = rows.find((widget) => widget.id === active.id)
-    if (!activeWidget) return
-
-    const targetVerticalPosition = overWidget?.verticalPosition
-      ?? activeWidget.verticalPosition
-      ?? 'TOP'
-    const remainingWidgets = rows.filter((widget) => widget.id !== activeWidget.id)
-    const targetList = remainingWidgets.filter(
-      (widget) =>
-        widget.area === targetArea &&
-        (widget.verticalPosition ?? 'TOP') === targetVerticalPosition
-    )
-    const overIndex = overWidget
-      ? Math.max(
-          0,
-          targetList.findIndex((widget) => widget.id === overWidget.id)
-        )
-      : targetList.length
-    const insertIndex = overIndex === -1 ? targetList.length : overIndex
-    const movedWidget = {
-      ...activeWidget,
-      area: targetArea,
-      verticalPosition: targetVerticalPosition,
-    }
-
-    targetList.splice(insertIndex, 0, movedWidget)
-    updateLayout.mutate([
-      ...remainingWidgets.filter(
-        (widget) =>
-          widget.area !== targetArea ||
-          (widget.verticalPosition ?? 'TOP') !== targetVerticalPosition
-      ),
-      ...targetList,
-    ])
-  }
-
-  const activePalette =
-    activeDrag?.kind === 'palette'
-      ? widgetTypes.find((item) => item.value === activeDrag.type)
-      : null
-  const activeWidget =
-    activeDrag?.kind === 'widget'
-      ? rows.find((widget) => widget.id === activeDrag.id)
-      : null
 
   return (
     <PageShell
+      fluid
+      fixed
       title='小工具'
-      description='拖拽组件到前台左侧或右侧栏，也可以继续拖拽调整顺序。'
+      description='左侧控制是否显示，右侧在真实前台画布中调整位置。'
     >
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveDrag(null)}
-      >
-        <div className='grid gap-6 xl:grid-cols-[320px_1fr]'>
-          <WidgetPalette creating={createWidget.isPending} usedTypes={usedTypes} />
+      <div className='grid min-h-0 flex-1 items-stretch gap-6 lg:grid-cols-[280px_minmax(0,1fr)]'>
+        <div className='min-h-0'>
+          <WidgetVisibilityList
+            widgets={rows}
+            creatingType={
+              createWidget.isPending
+                ? (createWidget.variables?.type as WidgetType | undefined)
+                : undefined
+            }
+            onToggle={(item, widget, enabled) => {
+              if (widget) {
+                updateWidget.mutate({ id: widget.id, payload: { enabled } })
+                return
+              }
+              if (!enabled) return
 
-          <div className='grid gap-4 lg:grid-cols-2'>
-            <WidgetAreaColumn
-              area='LEFT'
-              title='左侧小工具'
-              widgets={leftWidgets}
-              removingId={removeWidget.variables}
-              updatingId={updateWidget.isPending ? updateWidget.variables?.id : undefined}
-              isPaletteDragging={activeDrag?.kind === 'palette'}
-              onRemove={(id) => removeWidget.mutate(id)}
-              onUpdate={(id, payload) => updateWidget.mutate({ id, payload })}
-            />
-            <WidgetAreaColumn
-              area='RIGHT'
-              title='右侧小工具'
-              widgets={rightWidgets}
-              removingId={removeWidget.variables}
-              updatingId={updateWidget.isPending ? updateWidget.variables?.id : undefined}
-              isPaletteDragging={activeDrag?.kind === 'palette'}
-              onRemove={(id) => removeWidget.mutate(id)}
-              onUpdate={(id, payload) => updateWidget.mutate({ id, payload })}
-            />
-          </div>
+              const placement = getDefaultWidgetPlacement(item.value)
+              createWidget.mutate({
+                ...placement,
+                type: item.value,
+                title: item.label,
+                enabled: true,
+                sortOrder: widgetTypes.findIndex((candidate) => candidate.value === item.value),
+                config: item.template,
+              })
+            }}
+            onRotationPreview={(widget, rotation) => {
+              if (!widget) return
+              queryClient.setQueryData<SiteWidget[]>(['admin-widgets'], (current) =>
+                current?.map((candidate) =>
+                  candidate.id === widget.id ? { ...candidate, rotation } : candidate
+                )
+              )
+            }}
+            onRotationCommit={(item, widget, rotation) => {
+              if (widget) {
+                updateWidget.mutate({ id: widget.id, payload: { rotation } })
+                return
+              }
+
+              const placement = getDefaultWidgetPlacement(item.value)
+              createWidget.mutate({
+                ...placement,
+                rotation,
+                type: item.value,
+                title: item.label,
+                enabled: false,
+                sortOrder: widgetTypes.findIndex((candidate) => candidate.value === item.value),
+                config: item.template,
+              })
+            }}
+          />
         </div>
 
-        <DragOverlay>
-          {activePalette ? <PalettePreview item={activePalette} /> : null}
-          {activeWidget ? <WidgetCardPreview widget={activeWidget} /> : null}
-        </DragOverlay>
-      </DndContext>
+        <div className='min-h-0 min-w-0'>
+          <WidgetLayoutStudio
+            widgets={rows}
+            saving={saveVisualLayout.isPending}
+            onSave={(changes) => saveVisualLayout.mutateAsync(changes)}
+          />
+        </div>
+      </div>
     </PageShell>
   )
 }
 
-function WidgetPalette({
-  creating,
-  usedTypes,
-}: {
-  creating: boolean
-  usedTypes: Set<WidgetType>
-}) {
-  return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>组件库</CardTitle>
-        <CardDescription>拖拽组件到栏目中即可创建。</CardDescription>
-      </CardHeader>
-      <CardContent className='grid gap-3'>
-        {widgetTypes.map((item) => (
-          <PaletteDraggableItem
-            key={item.value}
-            item={item}
-            disabled={creating || usedTypes.has(item.value)}
-            used={usedTypes.has(item.value)}
-          />
-        ))}
-      </CardContent>
-    </Card>
-  )
+type WidgetDefinition = (typeof widgetTypes)[number]
+
+function getDefaultWidgetPlacement(type: WidgetType) {
+  const placements: Partial<Record<
+    WidgetType,
+    {
+      area: WidgetArea
+      verticalPosition: WidgetVerticalPosition
+      horizontalOffset: number
+      verticalOffset: number
+      rotation: number
+    }
+  >> = {
+    PROJECT_TREE: {
+      area: 'LEFT',
+      verticalPosition: 'TOP',
+      horizontalOffset: 24,
+      verticalOffset: 22,
+      rotation: -3,
+    },
+    HITOKOTO: {
+      area: 'RIGHT',
+      verticalPosition: 'TOP',
+      horizontalOffset: 20,
+      verticalOffset: 82,
+      rotation: 2,
+    },
+    DATE_CARD: {
+      area: 'RIGHT',
+      verticalPosition: 'TOP',
+      horizontalOffset: 20,
+      verticalOffset: 330,
+      rotation: -2,
+    },
+    PHOTO_GALLERY: {
+      area: 'RIGHT',
+      verticalPosition: 'BOTTOM',
+      horizontalOffset: 20,
+      verticalOffset: 220,
+      rotation: -2,
+    },
+    KEYBOARD: {
+      area: 'LEFT',
+      verticalPosition: 'BOTTOM',
+      horizontalOffset: 24,
+      verticalOffset: 16,
+      rotation: 0,
+    },
+    MUSIC_PLAYER: {
+      area: 'LEFT',
+      verticalPosition: 'BOTTOM',
+      horizontalOffset: 24,
+      verticalOffset: 300,
+      rotation: 0,
+    },
+  }
+  const placement = placements[type]
+  if (!placement) throw new Error(`Unsupported widget type: ${type}`)
+  return placement
 }
 
-function PaletteDraggableItem({
-  item,
-  disabled,
-  used,
-}: {
-  item: (typeof widgetTypes)[number]
-  disabled: boolean
-  used: boolean
-}) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `palette:${item.value}`,
-    data: { kind: 'palette', type: item.value } satisfies ActiveDrag,
-    disabled,
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={`group cursor-grab rounded-md border bg-background p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md active:cursor-grabbing ${
-        isDragging ? 'opacity-40' : ''
-      } ${disabled ? 'pointer-events-none cursor-not-allowed opacity-55 hover:translate-y-0 hover:border-border hover:shadow-xs' : ''}`}
-    >
-      <PalettePreview item={item} used={used} />
-    </div>
-  )
-}
-
-function PalettePreview({
-  item,
-  used = false,
-}: {
-  item: (typeof widgetTypes)[number]
-  used?: boolean
-}) {
-  const Icon = item.icon
-
-  return (
-    <div className='flex items-start gap-3'>
-      <div className='rounded-md bg-primary/10 p-2 text-primary transition-transform duration-200 group-hover:scale-105'>
-        <Icon className='size-4' />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='flex items-center gap-2'>
-          <div className='font-medium'>{item.label}</div>
-          {used ? (
-            <Badge variant='secondary' className='shrink-0'>
-              已添加
-            </Badge>
-          ) : null}
-        </div>
-        <div className='mt-1 text-xs leading-5 text-muted-foreground'>
-          {item.description}
-        </div>
-      </div>
-      <GripVertical className='mt-2 size-4 text-muted-foreground opacity-60' />
-    </div>
-  )
-}
-
-function WidgetAreaColumn({
-  area,
-  title,
+function WidgetVisibilityList({
   widgets,
-  removingId,
-  updatingId,
-  isPaletteDragging,
-  onRemove,
-  onUpdate,
+  creatingType,
+  onToggle,
+  onRotationPreview,
+  onRotationCommit,
 }: {
-  area: WidgetArea
-  title: string
   widgets: SiteWidget[]
-  removingId?: string
-  updatingId?: string
-  isPaletteDragging: boolean
-  onRemove: (id: string) => void
-  onUpdate: (id: string, payload: Record<string, unknown>) => void
+  creatingType?: WidgetType
+  onToggle: (
+    item: WidgetDefinition,
+    widget: SiteWidget | undefined,
+    enabled: boolean
+  ) => void
+  onRotationPreview: (widget: SiteWidget | undefined, rotation: number) => void
+  onRotationCommit: (
+    item: WidgetDefinition,
+    widget: SiteWidget | undefined,
+    rotation: number
+  ) => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: area })
+  const [rotationDrafts, setRotationDrafts] = useState<Partial<Record<WidgetType, number>>>({})
 
   return (
-    <Card
-      className={`transition-all duration-200 ${
-        isOver
-          ? 'border-primary ring-2 ring-primary/20'
-          : isPaletteDragging
-            ? 'border-dashed border-primary/40'
-            : ''
-      }`}
-    >
-      <CardHeader>
-        <div className='flex items-center justify-between gap-3'>
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>拖拽卡片可排序，也可以移动到另一侧。</CardDescription>
-          </div>
-          <Badge variant='secondary'>{widgets.length}</Badge>
-        </div>
+    <Card className='flex h-full min-h-0 flex-col overflow-hidden'>
+      <CardHeader className='shrink-0 border-b'>
+        <CardTitle className='text-base'>前台显示</CardTitle>
+        <CardDescription>
+          开关只控制是否显示，不会删除已经保存的配置和位置。
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <SortableContext
-          id={area}
-          items={widgets.map((widget) => widget.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div
-            ref={setNodeRef}
-            className={`grid min-h-56 content-start gap-3 rounded-md transition-colors duration-200 ${
-              isOver ? 'bg-primary/5 p-2' : 'p-0'
-            }`}
-          >
-            {widgets.length === 0 ? (
+      <CardContent className='min-h-0 flex-1 overflow-y-auto p-0'>
+        <div className='divide-y'>
+          {widgetTypes.map((item) => {
+            const widget = widgets.find((candidate) => candidate.type === item.value)
+            const Icon = item.icon
+            const rotation = rotationDrafts[item.value]
+              ?? widget?.rotation
+              ?? getDefaultWidgetPlacement(item.value).rotation
+
+            return (
               <div
-                className={`flex min-h-40 items-center justify-center rounded-md border border-dashed p-6 text-center text-sm transition-all duration-200 ${
-                  isOver
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'text-muted-foreground'
-                }`}
+                key={item.value}
+                className='px-4 py-3 transition-colors hover:bg-muted/30'
               >
-                拖到这里
+                <div className='flex min-h-10 items-center gap-3'>
+                  <div className='rounded-md border bg-background p-2 text-muted-foreground shadow-xs'>
+                    <Icon className='size-4' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <span className='font-medium'>{item.label}</span>
+                      <Badge variant='secondary' className='h-5 text-[10px]'>
+                        {!widget ? '未启用' : widget.enabled ? '显示中' : '已隐藏'}
+                      </Badge>
+                    </div>
+                    <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+                      {item.description}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={widget?.enabled ?? creatingType === item.value}
+                    aria-label={`${item.label}前台显示`}
+                    onCheckedChange={(enabled) => onToggle(item, widget, enabled)}
+                  />
+                </div>
+
+                <div className='mt-3 grid grid-cols-[32px_minmax(0,1fr)_38px] items-center gap-2'>
+                  <span className='text-xs text-muted-foreground'>旋转</span>
+                  <input
+                    type='range'
+                    min={-45}
+                    max={45}
+                    step={1}
+                    value={rotation}
+                    aria-label={`${item.label}旋转角度`}
+                    className='h-5 w-full cursor-pointer accent-primary'
+                    onChange={(event) => {
+                      const nextRotation = Number(event.currentTarget.value)
+                      setRotationDrafts((current) => ({
+                        ...current,
+                        [item.value]: nextRotation,
+                      }))
+                      onRotationPreview(widget, nextRotation)
+                    }}
+                    onPointerUp={(event) => {
+                      onRotationCommit(item, widget, Number(event.currentTarget.value))
+                    }}
+                    onKeyUp={(event) => {
+                      if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
+                        onRotationCommit(item, widget, Number(event.currentTarget.value))
+                      }
+                    }}
+                  />
+                  <output className='text-right font-mono text-xs tabular-nums text-muted-foreground'>
+                    {rotation}°
+                  </output>
+                </div>
               </div>
-            ) : null}
-            {widgets.map((widget) => (
-              <SortableWidgetCard
-                key={widget.id}
-                widget={widget}
-                removing={removingId === widget.id}
-                updating={updatingId === widget.id}
-                onRemove={() => onRemove(widget.id)}
-                onUpdate={(payload) => onUpdate(widget.id, payload)}
-              />
-            ))}
-          </div>
-        </SortableContext>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )
 }
 
-function SortableWidgetCard({
-  widget,
-  removing,
-  updating,
-  onRemove,
-  onUpdate,
+const previewPresets = [
+  { width: 1440, height: 900, label: '桌面', icon: Monitor },
+  { width: 1024, height: 768, label: '紧凑', icon: Tablet },
+  { width: 767, height: 900, label: '移动端', icon: Smartphone },
+] as const
+
+function getCurrentBrowserViewport() {
+  if (typeof window === 'undefined') return { width: 1440, height: 900 }
+  return {
+    width: Math.max(320, Math.round(window.innerWidth)),
+    height: Math.max(480, Math.round(window.innerHeight)),
+  }
+}
+
+function WidgetLayoutStudio({
+  widgets,
+  saving,
+  onSave,
 }: {
-  widget: SiteWidget
-  removing: boolean
-  updating: boolean
-  onRemove: () => void
-  onUpdate: (payload: Record<string, unknown>) => void
+  widgets: SiteWidget[]
+  saving: boolean
+  onSave: (changes: Record<string, Record<string, unknown>>) => Promise<void>
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: widget.id,
-    data: { kind: 'widget', id: widget.id } satisfies ActiveDrag,
-  })
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const widgetsRef = useRef(widgets)
+  const onSaveRef = useRef(onSave)
+  const [currentViewport, setCurrentViewport] = useState(getCurrentBrowserViewport)
+  const [previewSize, setPreviewSize] = useState(getCurrentBrowserViewport)
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 })
+  const [frameReady, setFrameReady] = useState(false)
+  const [drafts, setDrafts] = useState<Record<string, Record<string, unknown>>>({})
+  const [saveState, setSaveState] = useState<'idle' | 'saved' | 'error'>('idle')
+  widgetsRef.current = widgets
+  onSaveRef.current = onSave
+
+  const previewUrl = useMemo(() => {
+    const url = new URL(FRONTEND_PREVIEW_URL)
+    url.searchParams.set('widgetEditor', '1')
+    return url.toString()
+  }, [])
+  const canvasScale = stageSize.width > 0 && stageSize.height > 0
+    ? Math.min(
+        1,
+        Math.max(
+          0.16,
+          Math.min(
+            (stageSize.width - 24) / previewSize.width,
+            (stageSize.height - 24) / previewSize.height
+          )
+        )
+      )
+    : 0.65
+  const widgetSignature = widgets
+    .map((widget) => [
+      widget.id,
+      widget.enabled,
+      widget.area,
+      widget.verticalPosition,
+      widget.horizontalOffset,
+      widget.verticalOffset,
+      widget.rotation,
+      widget.updatedAt,
+    ].join(':'))
+    .join('|')
+  const draftCount = Object.keys(drafts).length
+
+  function syncWidgets() {
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: 'widget-editor-sync', widgets: widgetsRef.current },
+      '*'
+    )
+  }
+
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+
+    const observer = new ResizeObserver(([entry]) => {
+      setStageSize({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      })
+    })
+    observer.observe(stage)
+    const rect = stage.getBoundingClientRect()
+    setStageSize({ width: rect.width, height: rect.height })
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return
+      const message = event.data as {
+        type?: string
+        id?: unknown
+        payload?: unknown
+      } | null
+
+      if (message?.type === 'widget-editor-ready') {
+        setFrameReady(true)
+        syncWidgets()
+        return
+      }
+
+      if (
+        message?.type === 'widget-editor-change' &&
+        typeof message.id === 'string' &&
+        message.payload &&
+        typeof message.payload === 'object'
+      ) {
+        setDrafts((current) => ({
+          ...current,
+          [message.id as string]: {
+            ...(current[message.id as string] ?? {}),
+            ...(message.payload as Record<string, unknown>),
+          },
+        }))
+        setSaveState('idle')
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  useEffect(() => {
+    if (frameReady) syncWidgets()
+  }, [frameReady, widgetSignature])
+
+  async function saveDrafts() {
+    if (!draftCount || saving) return
+    try {
+      await onSaveRef.current(drafts)
+      setDrafts({})
+      setSaveState('saved')
+      toast.success('布局已保存')
+    } catch (error) {
+      setSaveState('error')
+      toast.error(error instanceof Error ? error.message : '布局保存失败，请重试')
+    }
+  }
+
+  function resetDrafts() {
+    setDrafts({})
+    setSaveState('idle')
+    syncWidgets()
+  }
+
+  function useCurrentViewport() {
+    const nextViewport = getCurrentBrowserViewport()
+    setCurrentViewport(nextViewport)
+    setPreviewSize(nextViewport)
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`rounded-md border bg-background p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-        isDragging ? 'opacity-40' : ''
-      }`}
-    >
-      <div className='flex items-start gap-3'>
-        <button
-          type='button'
-          className='mt-1 cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing'
-          {...attributes}
-          {...listeners}
-          aria-label='Drag to sort'
-        >
-          <GripVertical className='size-4' />
-        </button>
-        <div className='min-w-0 flex-1'>
-          <div className='truncate font-medium'>{widget.title || typeLabels[widget.type]}</div>
-          <div className='mt-1 text-xs text-muted-foreground'>
-            {typeLabels[widget.type]} / {widget.enabled ? '已启用' : '已停用'}
+    <Card className='flex h-full min-h-0 flex-col overflow-hidden border-primary/15 bg-card/95 shadow-sm'>
+      <CardHeader className='shrink-0 border-b bg-muted/20 py-4'>
+        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex items-start gap-3'>
+            <div className='rounded-md border bg-background p-2 text-primary shadow-xs'>
+              <Move className='size-4' />
+            </div>
+            <div>
+              <CardTitle className='text-base'>前台布局工作台</CardTitle>
+              <CardDescription className='mt-1'>
+                绿色轮廓可以拖动，红色区域始终留给中间内容。
+              </CardDescription>
+            </div>
           </div>
-        </div>
-        <Button
-          type='button'
-          variant='ghost'
-          size='icon'
-          disabled={removing}
-          onClick={onRemove}
-        >
-          <Trash2 />
-          <span className='sr-only'>删除</span>
-        </Button>
-      </div>
-      {widget.type === 'MUSIC_PLAYER' ? (
-        <MusicPlaylistEditor widget={widget} updating={updating} onUpdate={onUpdate} />
-      ) : null}
-      {widget.type === 'HITOKOTO' ? (
-        <HitokotoCompactEditor widget={widget} updating={updating} onUpdate={onUpdate} />
-      ) : null}
-      {widget.type === 'PROFILE' ? (
-        <ProfileEditor widget={widget} updating={updating} onUpdate={onUpdate} />
-      ) : null}
-      <WidgetPlacementEditor
-        widget={widget}
-        updating={updating}
-        onUpdate={onUpdate}
-      />
-    </div>
-  )
-}
 
-const widgetPlacements: Array<{
-  area: WidgetArea
-  verticalPosition: WidgetVerticalPosition
-  label: string
-}> = [
-  { area: 'LEFT', verticalPosition: 'TOP', label: '左上' },
-  { area: 'RIGHT', verticalPosition: 'TOP', label: '右上' },
-  { area: 'LEFT', verticalPosition: 'BOTTOM', label: '左下' },
-  { area: 'RIGHT', verticalPosition: 'BOTTOM', label: '右下' },
-]
-
-function WidgetPlacementEditor({
-  widget,
-  updating,
-  onUpdate,
-}: {
-  widget: SiteWidget
-  updating: boolean
-  onUpdate: (payload: Record<string, unknown>) => void
-}) {
-  const verticalPosition = widget.verticalPosition ?? 'TOP'
-  const horizontalOffset = Number.isFinite(widget.horizontalOffset)
-    ? widget.horizontalOffset
-    : widget.area === 'LEFT'
-      ? 24
-      : 20
-  const verticalOffset = Number.isFinite(widget.verticalOffset)
-    ? widget.verticalOffset
-    : verticalPosition === 'TOP'
-      ? widget.area === 'RIGHT'
-        ? 82
-        : 22
-      : widget.area === 'LEFT'
-        ? 16
-        : 28
-  const rotation = Number.isFinite(widget.rotation) ? widget.rotation : 0
-  const horizontalProperty = widget.area === 'LEFT' ? 'left' : 'right'
-  const verticalProperty = verticalPosition === 'TOP' ? 'top' : 'bottom'
-
-  return (
-    <div className='mt-3 grid gap-3 border-t pt-3'>
-      <div className='grid grid-cols-2 gap-1.5'>
-        {widgetPlacements.map((placement) => {
-          const active =
-            widget.area === placement.area &&
-            verticalPosition === placement.verticalPosition
-
-          return (
+          <div className='flex flex-wrap items-center gap-2'>
+            <div className='flex rounded-md border bg-background p-1 shadow-xs'>
+              <Button
+                type='button'
+                size='sm'
+                variant={
+                  previewSize.width === currentViewport.width &&
+                  previewSize.height === currentViewport.height
+                    ? 'secondary'
+                    : 'ghost'
+                }
+                className='h-8 gap-1.5 px-2.5'
+                onClick={useCurrentViewport}
+              >
+                <Monitor className='size-3.5' />
+                当前窗口
+                <span className='font-mono text-[10px] text-muted-foreground'>
+                  {currentViewport.width}×{currentViewport.height}
+                </span>
+              </Button>
+              {previewPresets.map((preset) => {
+                const Icon = preset.icon
+                const active =
+                  previewSize.width === preset.width &&
+                  previewSize.height === preset.height
+                return (
+                  <Button
+                    key={`${preset.width}x${preset.height}`}
+                    type='button'
+                    size='sm'
+                    variant={active ? 'secondary' : 'ghost'}
+                    className='h-8 gap-1.5 px-2.5'
+                    onClick={() => setPreviewSize({
+                      width: preset.width,
+                      height: preset.height,
+                    })}
+                  >
+                    <Icon className='size-3.5' />
+                    {preset.label}
+                    <span className='font-mono text-[10px] text-muted-foreground'>
+                      {preset.width}×{preset.height}
+                    </span>
+                  </Button>
+                )
+              })}
+            </div>
+            <Badge
+              variant={saving || draftCount ? 'default' : 'secondary'}
+              className={saveState === 'error' ? 'bg-destructive text-destructive-foreground' : ''}
+            >
+              {saving
+                ? '正在保存…'
+                : draftCount
+                  ? `${draftCount} 项未保存`
+                  : saveState === 'saved'
+                    ? '已保存'
+                    : saveState === 'error'
+                      ? '保存失败'
+                      : frameReady
+                        ? '布局已同步'
+                        : '正在连接…'}
+            </Badge>
             <Button
-              key={`${placement.area}-${placement.verticalPosition}`}
               type='button'
               size='sm'
-              variant={active ? 'default' : 'outline'}
-              className='h-8'
-              disabled={updating}
-              onClick={() =>
-                onUpdate({
-                  area: placement.area,
-                  verticalPosition: placement.verticalPosition,
-                })
-              }
+              variant='outline'
+              className='h-9 gap-1.5'
+              disabled={!draftCount || saving}
+              onClick={resetDrafts}
             >
-              {placement.label}
+              <RotateCcw className='size-3.5' />
+              放弃更改
             </Button>
-          )
-        })}
-      </div>
-
-      <div className='grid grid-cols-3 gap-2'>
-        <div className='grid gap-1.5'>
-          <Label htmlFor={`widget-horizontal-${widget.id}`} className='font-mono text-xs'>
-            {horizontalProperty}
-          </Label>
-          <div className='relative'>
-            <Input
-              key={`${widget.id}-${horizontalProperty}-${horizontalOffset}`}
-              id={`widget-horizontal-${widget.id}`}
-              type='number'
-              min={-1000}
-              max={3000}
-              step={1}
-              defaultValue={horizontalOffset}
-              disabled={updating}
-              className='pr-7 text-right font-mono'
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur()
-              }}
-              onBlur={(event) => {
-                const nextOffset = Math.max(
-                  -1000,
-                  Math.min(3000, Number(event.currentTarget.value) || 0)
-                )
-                if (nextOffset !== horizontalOffset) {
-                  onUpdate({ horizontalOffset: nextOffset })
-                }
-              }}
-            />
-            <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
-              px
-            </span>
-          </div>
-        </div>
-
-        <div className='grid gap-1.5'>
-          <Label htmlFor={`widget-vertical-${widget.id}`} className='font-mono text-xs'>
-            {verticalProperty}
-          </Label>
-          <div className='relative'>
-            <Input
-              key={`${widget.id}-${verticalProperty}-${verticalOffset}`}
-              id={`widget-vertical-${widget.id}`}
-              type='number'
-              min={-1000}
-              max={3000}
-              step={1}
-              defaultValue={verticalOffset}
-              disabled={updating}
-              className='pr-7 text-right font-mono'
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur()
-              }}
-              onBlur={(event) => {
-                const nextOffset = Math.max(
-                  -1000,
-                  Math.min(3000, Number(event.currentTarget.value) || 0)
-                )
-                if (nextOffset !== verticalOffset) {
-                  onUpdate({ verticalOffset: nextOffset })
-                }
-              }}
-            />
-            <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
-              px
-            </span>
-          </div>
-        </div>
-
-        <div className='grid gap-1.5'>
-          <Label htmlFor={`widget-rotation-${widget.id}`} className='text-xs'>旋转</Label>
-        <div className='relative'>
-          <Input
-            key={`${widget.id}-${rotation}`}
-            id={`widget-rotation-${widget.id}`}
-            type='number'
-            min={-45}
-            max={45}
-            step={1}
-            defaultValue={rotation}
-            disabled={updating}
-            className='pr-7 text-right font-mono'
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur()
-            }}
-            onBlur={(event) => {
-              const nextRotation = Math.max(
-                -45,
-                Math.min(45, Number(event.currentTarget.value) || 0)
-              )
-              if (nextRotation !== rotation) {
-                onUpdate({ rotation: nextRotation })
-              }
-            }}
-          />
-          <span className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted-foreground'>
-            °
-          </span>
-        </div>
-        </div>
-      </div>
-      <p className='font-mono text-[11px] text-muted-foreground'>
-        {horizontalProperty}: {horizontalOffset}px; {verticalProperty}: {verticalOffset}px;
-      </p>
-      <p className='text-[11px] text-muted-foreground'>修改后按 Enter 或离开输入框自动保存。</p>
-    </div>
-  )
-}
-
-function WidgetCardPreview({ widget }: { widget: SiteWidget }) {
-  return (
-    <div className='w-72 rounded-md border bg-background p-3 shadow-lg'>
-      <div className='flex items-start gap-3'>
-        <GripVertical className='mt-1 size-4 text-muted-foreground' />
-        <div className='min-w-0 flex-1'>
-          <div className='truncate font-medium'>{widget.title || typeLabels[widget.type]}</div>
-          <div className='mt-1 text-xs text-muted-foreground'>
-            {typeLabels[widget.type]} / {widget.enabled ? '已启用' : '已停用'}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MusicPlaylistEditor({
-  widget,
-  updating,
-  onUpdate,
-}: {
-  widget: SiteWidget
-  updating: boolean
-  onUpdate: (payload: Record<string, unknown>) => void
-}) {
-  const [playlistSource, setPlaylistSource] = useState<PlaylistSource | null>(() =>
-    readPlaylistSource(widget.config)
-  )
-  const [neteaseUrl, setNeteaseUrl] = useState(() => playlistSource?.url ?? '')
-  const [fetching, setFetching] = useState(false)
-
-  async function validateNeteasePlaylist() {
-    const url = neteaseUrl.trim()
-    if (!url) return
-    if (!isNeteasePlaylistUrl(url)) {
-      window.alert('请输入网易云歌单链接。')
-      return
-    }
-
-    setFetching(true)
-    try {
-      const playlistData = await musicApi.neteasePlaylist(url)
-      setPlaylistSource({
-        provider: 'netease',
-        url,
-        id: playlistData.id,
-        title: playlistData.title,
-        cover: playlistData.cover,
-        trackCount: playlistData.trackCount || playlistData.tracks.length,
-      })
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : '歌单加载失败。')
-    } finally {
-      setFetching(false)
-    }
-  }
-
-  function savePlaylist() {
-    const url = neteaseUrl.trim()
-    onUpdate({
-      config: {
-        ...widget.config,
-        playlistSource: playlistSource ?? (url ? { provider: 'netease', url } : null),
-      },
-    })
-  }
-
-  return (
-    <div className='mt-4 grid gap-3 border-t pt-4'>
-      <div className='grid gap-2'>
-        <Label htmlFor={`netease-${widget.id}`}>网易云歌单链接</Label>
-        <div className='flex gap-2'>
-          <Input
-            id={`netease-${widget.id}`}
-            value={neteaseUrl}
-            onChange={(event) => setNeteaseUrl(event.currentTarget.value)}
-            placeholder='https://music.163.com/#/playlist?id=...'
-          />
-          <Button
-            type='button'
-            variant='outline'
-            disabled={fetching}
-            onClick={validateNeteasePlaylist}
-          >
-            {fetching ? '加载中' : '校验'}
-          </Button>
-        </div>
-      </div>
-
-      {playlistSource ? (
-        <div className='rounded-md border bg-muted/30 p-3 text-sm'>
-          <div className='font-medium'>{playlistSource.title || '网易云歌单'}</div>
-          <div className='mt-1 text-xs text-muted-foreground'>
-            {playlistSource.trackCount
-              ? `${playlistSource.trackCount} 首歌曲`
-              : '已配置歌单来源'}
-          </div>
-        </div>
-      ) : null}
-
-      <Button type='button' disabled={updating} onClick={savePlaylist}>
-        {updating ? '保存中' : '保存歌单'}
-      </Button>
-    </div>
-  )
-}
-
-function HitokotoCompactEditor({
-  widget,
-  updating,
-  onUpdate,
-}: {
-  widget: SiteWidget
-  updating: boolean
-  onUpdate: (payload: Record<string, unknown>) => void
-}) {
-  const hasLegacyBackground = Boolean(readConfigString(widget.config, 'backgroundImage'))
-
-  function clearHitokotoBackground() {
-    const nextConfig = { ...widget.config }
-    delete nextConfig.backgroundImage
-    onUpdate({ config: nextConfig })
-  }
-
-  return (
-    <div className='mt-4 grid gap-3 border-t pt-4'>
-      <div className='rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground'>
-        一言卡片不再使用背景图。
-      </div>
-
-      {hasLegacyBackground ? (
-        <Button type='button' variant='outline' disabled={updating} onClick={clearHitokotoBackground}>
-          {updating ? '保存中' : '清除旧背景图配置'}
-        </Button>
-      ) : null}
-    </div>
-  )
-}
-
-function HitokotoEditor({
-  widget,
-  updating,
-  onUpdate,
-}: {
-  widget: SiteWidget
-  updating: boolean
-  onUpdate: (payload: Record<string, unknown>) => void
-}) {
-  const [backgroundImage, setBackgroundImage] = useState(() =>
-    readConfigString(widget.config, 'backgroundImage')
-  )
-  const [uploading, setUploading] = useState(false)
-
-  async function uploadBackground(file: File | undefined) {
-    if (!file) return
-
-    setUploading(true)
-    try {
-      const result = await uploadsApi.image(file)
-      setBackgroundImage(result.url)
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : '图片上传失败。')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  function saveHitokoto() {
-    onUpdate({
-      config: {
-        ...widget.config,
-        backgroundImage: backgroundImage.trim(),
-      },
-    })
-  }
-
-  return (
-    <div className='mt-4 grid gap-3 border-t pt-4'>
-      <div className='grid gap-2'>
-        <Label htmlFor={`hitokoto-bg-${widget.id}`}>背景图</Label>
-        <Input
-          id={`hitokoto-bg-${widget.id}`}
-          type='file'
-          accept='image/jpeg,image/png,image/webp,image/gif'
-          disabled={uploading}
-          onChange={(event) => void uploadBackground(event.currentTarget.files?.[0])}
-        />
-      </div>
-
-      {backgroundImage ? (
-        <div className='overflow-hidden rounded-md border bg-muted/30'>
-          <img
-            src={backgroundImage}
-            alt=''
-            className='h-32 w-full object-cover'
-          />
-          <div className='truncate px-3 py-2 text-xs text-muted-foreground'>
-            {backgroundImage}
-          </div>
-        </div>
-      ) : null}
-
-      <Button type='button' disabled={updating || uploading} onClick={saveHitokoto}>
-        {updating ? '保存中' : uploading ? '上传中' : '保存背景图'}
-      </Button>
-    </div>
-  )
-}
-
-void HitokotoEditor
-
-function ProfileEditor({
-  widget,
-  updating,
-  onUpdate,
-}: {
-  widget: SiteWidget
-  updating: boolean
-  onUpdate: (payload: Record<string, unknown>) => void
-}) {
-  const [coverImage, setCoverImage] = useState(() =>
-    readConfigString(widget.config, 'coverImage')
-  )
-  const [avatar, setAvatar] = useState(() => readConfigString(widget.config, 'avatar'))
-  const [name, setName] = useState(() => readConfigString(widget.config, 'name'))
-  const [role, setRole] = useState(() => readConfigString(widget.config, 'role'))
-  const [socials, setSocials] = useState<SocialConfig[]>(() =>
-    normalizeSocials(widget.config.socials)
-  )
-  const [selectedSocial, setSelectedSocial] = useState<SocialPlatformKey>(() =>
-    normalizeSocials(widget.config.socials).find((item) => item.enabled)?.platform ?? 'github'
-  )
-  const [uploading, setUploading] = useState<string | null>(null)
-
-  async function uploadProfileImage(
-    kind: 'cover' | 'avatar' | `social-${SocialPlatformKey}`,
-    file: File | undefined
-  ) {
-    if (!file) return
-
-    setUploading(kind)
-    try {
-      const result = await uploadsApi.image(file)
-      if (kind === 'cover') {
-        setCoverImage(result.url)
-      } else if (kind === 'avatar') {
-        setAvatar(result.url)
-      } else {
-        const platform = kind.replace('social-', '') as SocialPlatformKey
-        updateSocial(platform, { qrCode: result.url, enabled: true })
-      }
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : '图片上传失败。')
-    } finally {
-      setUploading(null)
-    }
-  }
-
-  function updateSocial(platform: SocialPlatformKey, patch: Partial<SocialConfig>) {
-    setSocials((items) =>
-      items.map((item) => (item.platform === platform ? { ...item, ...patch } : item))
-    )
-  }
-
-  function saveProfile() {
-    onUpdate({
-      config: {
-        ...widget.config,
-        coverImage: coverImage.trim(),
-        avatar: avatar.trim(),
-        name: name.trim(),
-        role: role.trim(),
-        socials: serializeSocials(socials),
-        stats: [],
-      },
-    })
-  }
-
-  const activeSocial = socials.find((item) => item.platform === selectedSocial) ?? socials[0]
-  const activePlatform = activeSocial
-    ? socialPlatforms.find((item) => item.key === activeSocial.platform)
-    : undefined
-
-  return (
-    <div className='mt-4 grid gap-3 border-t pt-4'>
-      <div className='grid gap-2'>
-        <Label htmlFor={`profile-name-${widget.id}`}>昵称</Label>
-        <Input
-          id={`profile-name-${widget.id}`}
-          value={name}
-          onChange={(event) => setName(event.currentTarget.value)}
-          placeholder='Jayvion Simon'
-        />
-      </div>
-
-      <div className='grid gap-2'>
-        <Label htmlFor={`profile-role-${widget.id}`}>身份</Label>
-        <Input
-          id={`profile-role-${widget.id}`}
-          value={role}
-          onChange={(event) => setRole(event.currentTarget.value)}
-          placeholder='CEO'
-        />
-      </div>
-
-      <div className='grid gap-2'>
-        <Label htmlFor={`profile-cover-${widget.id}`}>封面图</Label>
-        <Input
-          id={`profile-cover-${widget.id}`}
-          type='file'
-          accept='image/jpeg,image/png,image/webp,image/gif'
-          disabled={uploading === 'cover'}
-          onChange={(event) => void uploadProfileImage('cover', event.currentTarget.files?.[0])}
-        />
-      </div>
-
-      {coverImage ? (
-        <img src={coverImage} alt='' className='h-24 w-full rounded-md object-cover' />
-      ) : null}
-
-      <div className='grid gap-2'>
-        <Label htmlFor={`profile-avatar-${widget.id}`}>头像</Label>
-        <Input
-          id={`profile-avatar-${widget.id}`}
-          type='file'
-          accept='image/jpeg,image/png,image/webp,image/gif'
-          disabled={uploading === 'avatar'}
-          onChange={(event) => void uploadProfileImage('avatar', event.currentTarget.files?.[0])}
-        />
-      </div>
-
-      {avatar ? (
-        <img src={avatar} alt='' className='size-20 rounded-full object-cover' />
-      ) : null}
-
-      {activeSocial ? (
-        <div className='grid gap-3 rounded-md border bg-muted/20 p-3'>
-          <Label>社交信息</Label>
-          <div className='flex flex-wrap gap-2'>
-            {socials.map((social) => {
-              const platform = socialPlatforms.find((item) => item.key === social.platform)
-              const label = platform?.label ?? social.label
-              const active = social.platform === activeSocial.platform
-              return (
-                <Button
-                  key={social.platform}
-                  type='button'
-                  variant={active ? 'default' : social.enabled ? 'secondary' : 'outline'}
-                  size='sm'
-                  onClick={() => setSelectedSocial(social.platform)}
-                >
-                  {label}
-                </Button>
-              )
-            })}
-          </div>
-
-          <div className='grid gap-3 rounded-md border bg-background p-3'>
-            <div className='flex items-center gap-2'>
-              <Checkbox
-                id={`profile-social-compact-enabled-${widget.id}-${activeSocial.platform}`}
-                checked={activeSocial.enabled}
-                onCheckedChange={(checked) =>
-                  updateSocial(activeSocial.platform, { enabled: checked === true })
-                }
-              />
-              <Label htmlFor={`profile-social-compact-enabled-${widget.id}-${activeSocial.platform}`}>
-                启用 {activePlatform?.label ?? activeSocial.label}
-              </Label>
-            </div>
-
-            {activeSocial.platform === 'custom' ? (
-              <Input
-                value={activeSocial.label}
-                onChange={(event) =>
-                  updateSocial(activeSocial.platform, { label: event.currentTarget.value })
-                }
-                placeholder='自定义平台名称'
-              />
-            ) : null}
-
-            <Input
-              value={activeSocial.url}
-              onChange={(event) =>
-                updateSocial(activeSocial.platform, {
-                  url: event.currentTarget.value,
-                  enabled: activeSocial.enabled || Boolean(event.currentTarget.value.trim()),
-                })
-              }
-              placeholder={activePlatform?.placeholder ?? 'https://example.com'}
-            />
-
-            <div className='flex gap-2'>
-              <Input
-                type='color'
-                value={activeSocial.color}
-                onChange={(event) =>
-                  updateSocial(activeSocial.platform, { color: event.currentTarget.value })
-                }
-                className='h-10 w-14 p-1'
-              />
-              <Input
-                value={activeSocial.color}
-                onChange={(event) =>
-                  updateSocial(activeSocial.platform, { color: event.currentTarget.value })
-                }
-                placeholder='#111827'
-              />
-            </div>
-
-            {activePlatform?.qrCode ? (
-              <div className='grid gap-2'>
-                <Input
-                  type='file'
-                  accept='image/jpeg,image/png,image/webp,image/gif'
-                  disabled={uploading === `social-${activeSocial.platform}`}
-                  onChange={(event) =>
-                    void uploadProfileImage(
-                      `social-${activeSocial.platform}`,
-                      event.currentTarget.files?.[0]
-                    )
-                  }
-                />
-                {activeSocial.qrCode ? (
-                  <img
-                    src={activeSocial.qrCode}
-                    alt=''
-                    className='size-20 rounded-md border object-cover'
-                  />
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      <div className='hidden'>
-        <Label>社交信息</Label>
-        {socials.map((social) => {
-          const platform = socialPlatforms.find((item) => item.key === social.platform)
-          const label = platform?.label ?? social.label
-          return (
-            <div
-              key={social.platform}
-              className='grid gap-3 rounded-md border bg-muted/20 p-3'
+            <Button
+              type='button'
+              size='sm'
+              className='h-9 gap-1.5'
+              disabled={!draftCount || saving}
+              onClick={() => void saveDrafts()}
             >
-              <div className='flex items-center gap-2'>
-                <Checkbox
-                  id={`profile-social-enabled-${widget.id}-${social.platform}`}
-                  checked={social.enabled}
-                  onCheckedChange={(checked) =>
-                    updateSocial(social.platform, { enabled: checked === true })
-                  }
-                />
-                <Label
-                  htmlFor={`profile-social-enabled-${widget.id}-${social.platform}`}
-                  className='font-medium'
-                >
-                  {label}
-                </Label>
-              </div>
-              {social.platform === 'custom' ? (
-                <Input
-                  value={social.label}
-                  onChange={(event) =>
-                    updateSocial(social.platform, { label: event.currentTarget.value })
-                  }
-                  placeholder='自定义平台名称'
-                />
-              ) : null}
-              <Input
-                value={social.url}
-                onChange={(event) =>
-                  updateSocial(social.platform, {
-                    url: event.currentTarget.value,
-                    enabled: social.enabled || Boolean(event.currentTarget.value.trim()),
-                  })
-                }
-                placeholder={platform?.placeholder ?? 'https://example.com'}
-              />
-              <div className='grid gap-2'>
-                <Label htmlFor={`profile-social-color-${widget.id}-${social.platform}`}>
-                  图标颜色
-                </Label>
-                <div className='flex gap-2'>
-                  <Input
-                    id={`profile-social-color-${widget.id}-${social.platform}`}
-                    type='color'
-                    value={social.color}
-                    onChange={(event) =>
-                      updateSocial(social.platform, { color: event.currentTarget.value })
-                    }
-                    className='h-10 w-14 p-1'
-                  />
-                  <Input
-                    value={social.color}
-                    onChange={(event) =>
-                      updateSocial(social.platform, { color: event.currentTarget.value })
-                    }
-                    placeholder='#111827'
-                  />
-                </div>
-              </div>
-              {platform?.qrCode ? (
-                <div className='grid gap-2'>
-                  <Input
-                    type='file'
-                    accept='image/jpeg,image/png,image/webp,image/gif'
-                    disabled={uploading === `social-${social.platform}`}
-                    onChange={(event) =>
-                      void uploadProfileImage(
-                        `social-${social.platform}`,
-                        event.currentTarget.files?.[0]
-                      )
-                    }
-                  />
-                  {social.qrCode ? (
-                    <img
-                      src={social.qrCode}
-                      alt=''
-                      className='size-20 rounded-md border object-cover'
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
-      </div>
+              <Save className='size-3.5' />
+              保存布局{draftCount ? ` (${draftCount})` : ''}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
 
-      <Button type='button' disabled={updating || uploading !== null} onClick={saveProfile}>
-        {updating ? '保存中' : uploading ? '上传中' : '保存个人信息'}
-      </Button>
-    </div>
+      <CardContent className='flex min-h-0 flex-1 flex-col p-0'>
+        <div
+          ref={stageRef}
+          className='relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_center,hsl(var(--muted-foreground)/0.16)_1px,transparent_1px)] bg-[length:18px_18px] p-3'
+        >
+          <div
+            className='mx-auto overflow-hidden rounded-lg border bg-background shadow-[0_18px_60px_hsl(var(--foreground)/0.12)]'
+            style={{
+              width: previewSize.width * canvasScale,
+              height: previewSize.height * canvasScale,
+            }}
+          >
+            <iframe
+              ref={iframeRef}
+              src={previewUrl}
+              title='前台小工具布局预览'
+              className='block border-0 bg-background'
+              style={{
+                width: previewSize.width,
+                height: previewSize.height,
+                transform: `scale(${canvasScale})`,
+                transformOrigin: 'top left',
+              }}
+              onLoad={() => {
+                setFrameReady(true)
+                window.setTimeout(syncWidgets, 120)
+              }}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
-}
-
-function readPlaylistSource(config: Record<string, unknown>) {
-  const source = config.playlistSource
-  if (!source || typeof source !== 'object' || Array.isArray(source)) return null
-  const item = source as Record<string, unknown>
-  const provider = readConfigString(item, 'provider')
-  const url = readConfigString(item, 'url')
-  if (provider !== 'netease' || !url) return null
-  const trackCount = item.trackCount
-
-  return {
-    provider: 'netease',
-    url,
-    id: readConfigString(item, 'id') || undefined,
-    title: readConfigString(item, 'title') || undefined,
-    cover: readConfigString(item, 'cover') || undefined,
-    trackCount: typeof trackCount === 'number' ? trackCount : undefined,
-  } satisfies PlaylistSource
-}
-
-function readConfigString(source: Record<string, unknown>, key: string) {
-  const value = source[key]
-  return typeof value === 'string' ? value : ''
-}
-
-function normalizeSocials(value: unknown): SocialConfig[] {
-  const configured = Array.isArray(value)
-    ? value.filter(
-        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object'
-      )
-    : []
-
-  return socialPlatforms.map((platform) => {
-    const item = configured.find(
-      (social) =>
-        readConfigString(social, 'platform') === platform.key ||
-        readConfigString(social, 'icon') === platform.icon
-    )
-    const url = item ? readConfigString(item, 'url') : ''
-    const qrCode = item ? readConfigString(item, 'qrCode') : ''
-    const label = item ? readConfigString(item, 'label') || platform.label : platform.label
-    const color = item ? readConfigString(item, 'color') || platform.color : platform.color
-    return {
-      platform: platform.key,
-      label,
-      url,
-      icon: platform.icon || (item ? readConfigString(item, 'icon') : ''),
-      color,
-      qrCode,
-      enabled: Boolean(item && (url || qrCode)),
-    }
-  })
-}
-
-function serializeSocials(value: SocialConfig[]) {
-  return value
-    .filter((item) => item.enabled && (item.url.trim() || item.qrCode.trim()))
-    .map((item) => ({
-      platform: item.platform,
-      label: item.label.trim(),
-      url: item.url.trim(),
-      icon: item.icon.trim(),
-      color: normalizeHexColor(item.color) || '#111827',
-      qrCode: item.qrCode.trim(),
-    }))
-}
-
-function normalizeHexColor(value: string) {
-  const text = value.trim()
-  return /^#[0-9a-fA-F]{6}$/.test(text) ? text : ''
-}
-
-function isNeteasePlaylistUrl(url: string) {
-  const text = url.trim()
-  if (!text) return false
-
-  try {
-    const parsed = new URL(text)
-    return /playlist/i.test(`${parsed.pathname}${parsed.hash}`)
-  } catch {
-    return /playlist/i.test(text)
-  }
 }

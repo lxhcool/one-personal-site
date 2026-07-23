@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { seedArticles, seedFriendLinks } from './content';
+import { additionalArticles, additionalFriendLinks, seedMoments } from './additional-content';
 
 const prisma = new PrismaClient();
 
 async function main() {
   // 正式文章内容
-  for (const article of seedArticles) {
+  for (const article of [...seedArticles, ...additionalArticles]) {
     const exists = await prisma.post.findUnique({
       where: { slug: article.slug },
     });
@@ -20,12 +21,44 @@ async function main() {
       });
       console.log(`文章 [${article.title}] 已创建`);
     } else {
-      console.log(`文章 [${article.title}] 已存在，跳过创建`);
+      await prisma.post.update({
+        where: { slug: article.slug },
+        data: {
+          ...article,
+          type: 'ARTICLE',
+          status: 'PUBLISHED',
+          media: {},
+        },
+      });
+      console.log(`文章 [${article.title}] 已更新`);
+    }
+  }
+
+  // 短动态
+  for (const moment of seedMoments) {
+    const exists = await prisma.post.findUnique({
+      where: { slug: moment.slug },
+    });
+    if (!exists) {
+      await prisma.post.create({
+        data: {
+          ...moment,
+          type: 'MOMENT',
+          status: 'PUBLISHED',
+          content: '',
+          excerpt: null,
+          media: moment.media ?? {},
+          tags: [],
+        },
+      });
+      console.log(`动态 [${moment.title}] 已创建`);
+    } else {
+      console.log(`动态 [${moment.title}] 已存在，跳过创建`);
     }
   }
 
   // 友情链接
-  for (const friendLink of seedFriendLinks) {
+  for (const friendLink of [...seedFriendLinks, ...additionalFriendLinks]) {
     const exists = await prisma.friendLink.findFirst({
       where: { url: friendLink.url },
     });
@@ -61,20 +94,6 @@ async function main() {
 
   // 默认小工具
   const widgets = [
-    {
-      type: 'PROFILE' as const,
-      area: 'RIGHT' as const,
-      verticalPosition: 'TOP' as const,
-      horizontalOffset: 20,
-      verticalOffset: 82,
-      rotation: 0,
-      title: '个人信息',
-      sortOrder: 1,
-      config: {
-        name: '哈基米',
-        bio: '这个人很懒，什么都没写~',
-      },
-    },
     {
       type: 'DATE_CARD' as const,
       area: 'LEFT' as const,
