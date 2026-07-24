@@ -1,6 +1,33 @@
+
+
+:root {
+  --color-oatmeal-50: oklch(98.5% .008 75);
+  --color-oatmeal-100: oklch(96% .016 72);
+  --color-oatmeal-200: oklch(92% .018 68);
+  --color-oatmeal-300: oklch(87% .025 63);
+  --color-oatmeal-400: oklch(71% .038 58);
+  --color-oatmeal-500: oklch(55% .042 55);
+  --color-oatmeal-600: oklch(44% .038 52);
+  --color-oatmeal-700: oklch(36% .032 50);
+  --color-oatmeal-800: oklch(27% .024 48);
+  --color-oatmeal-900: oklch(20% .018 46);
+  --color-oatmeal-950: oklch(14.5% .012 44);
+  --palette-50: var(--color-oatmeal-50);
+  --palette-100: var(--color-oatmeal-100);
+  --palette-200: var(--color-oatmeal-200);
+  --palette-300: var(--color-oatmeal-300);
+  --palette-400: var(--color-oatmeal-400);
+  --palette-500: var(--color-oatmeal-500);
+  --palette-600: var(--color-oatmeal-600);
+  --palette-700: var(--color-oatmeal-700);
+  --palette-800: var(--color-oatmeal-800);
+  --palette-900: var(--color-oatmeal-900);
+  --palette-950: var(--color-oatmeal-950);
+}
+
 :root {
   color-scheme: light;
-  --page-bg: #f0f2f4;
+  --page-bg: oklch(98.5% .008 75);
   --card-bg: #ffffff;
   --text: #1f2328;
   --text-muted: #6b7280;
@@ -16,6 +43,7 @@
   --center-column: 680px;
   --right-column: 260px;
   --shell-gap: 20px;
+  --background-color-primary: var(--palette-50);
 }
 
 :root[data-theme='dark'] {
@@ -31,6 +59,7 @@
   --paper-surface: rgba(18, 27, 32, 0.78);
   --paper-surface-soft: rgba(27, 38, 43, 0.62);
   --paper-border: rgba(132, 151, 157, 0.23);
+  --background-color-primary: var(--palette-950);
 }
 
 body {
@@ -380,3 +409,32 @@ button {
 :root[data-theme='dark'] body {
   background-image: none;
 }
+
+.from-\(--background-color-primary\) {
+  --tw-gradient-from: var(--background-color-primary);
+  --tw-gradient-stops: var(--tw-gradient-via-stops,var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position))
+}
+
+.bg-linear-to-b {
+        --tw-gradient-position: to bottom
+    }
+
+    @supports (background-image: linear-gradient(in lab, red, red)) {
+        .bg-linear-to-b {
+            --tw-gradient-position:to bottom in oklab
+        }
+    }
+
+    .bg-linear-to-b {
+        background-image: linear-gradient(var(--tw-gradient-stops))
+    }
+
+    .bg-linear-to-t {
+        --tw-gradient-position: to top
+    }
+
+    @supports (background-image: linear-gradient(in lab, red, red)) {
+        .bg-linear-to-t {
+            --tw-gradient-position:to top in oklab
+        }
+    }

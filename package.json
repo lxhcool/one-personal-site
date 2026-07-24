@@ -1,0 +1,13 @@
+{
+  "name": "one-personal-site",
+  "private": true,
+  "scripts": {
+    "dev": "./dev-start.sh",
+    "dev:stop": "./dev-stop.sh",
+    "check:backend": "npm --prefix lxhcool-backend run build",
+    "check:frontend": "npm --prefix lxhcool-frontend run typecheck",
+    "check:admin": "npm --prefix lxhcool-admin run build",
+    "test:admin": "npm --prefix lxhcool-admin run test",
+    "verify": "npm run check:backend && npm run check:frontend && npm run check:admin"
+  }
+}

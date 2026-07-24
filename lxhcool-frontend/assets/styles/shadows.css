@@ -42,7 +42,6 @@
     0px 4px 4px 0px rgba(0, 0, 0, 0.02);
   --shadow-control-value: 0 6px 16px rgba(0, 0, 0, 0.08);
   --shadow-avatar-value: 0 8px 18px rgba(15, 23, 42, 0.08);
-  --shadow-profile-avatar-value: 0 4px 12px rgba(15, 23, 42, 0.16);
   --shadow-panel-value: 0 10px 28px rgba(17, 24, 39, 0.08),
     0 2px 8px rgba(17, 24, 39, 0.04);
   --shadow-toggle-value: 0 6px 14px rgba(17, 24, 39, 0.1);
@@ -77,11 +76,6 @@
 
 .u-shadow-avatar {
   --tw-shadow: var(--shadow-avatar-value);
-  box-shadow: var(--shadow-value);
-}
-
-.u-shadow-profile-avatar {
-  --tw-shadow: var(--shadow-profile-avatar-value);
   box-shadow: var(--shadow-value);
 }
 

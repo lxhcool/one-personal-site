@@ -2,7 +2,6 @@
 import { ListMusic, Pause, Play, Shuffle, SkipBack, SkipForward, X } from '@lucide/vue';
 import { listPublicFriendLinks } from '~/entities/friend-link/api/friendLinkApi';
 import type { SiteWidget } from '~/entities/widget/model/types';
-import ProjectTreeWidget from './ui/ProjectTreeWidget.vue';
 import DateCardWidget from './ui/DateCardWidget.vue';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import { requestPublicApi } from '~/shared/api/client';
@@ -30,39 +29,6 @@ type HitokotoSentence = {
   from_who?: string | null;
 };
 
-type ProfileSocial = {
-  platform: string;
-  label: string;
-  url: string;
-  icon?: string;
-  color?: string;
-  qrCode?: string;
-};
-
-const socialDefaultColors: Record<string, string> = {
-  github: '181717',
-  gitee: 'C71D23',
-  douyin: '000000',
-  tiktok: '000000',
-  xiaohongshu: 'FF2442',
-  bilibili: '00A1D6',
-  'netease-cloud-music': 'D43C33',
-  neteasecloudmusic: 'D43C33',
-  zhihu: '0084FF',
-  juejin: '1E80FF',
-  csdn: 'FC5531',
-  weibo: 'E6162D',
-  sinaweibo: 'E6162D',
-  telegram: '26A5E4',
-  discord: '5865F2',
-  instagram: 'E4405F',
-  youtube: 'FF0000',
-  x: '000000',
-  wechat: '07C160',
-  qq: '1EBAFC',
-  tencentqq: '1EBAFC',
-};
-
 const config = computed(() => props.widget.config ?? {});
 
 const normalized = computed(() => {
@@ -88,16 +54,6 @@ const normalized = computed(() => {
         limit: readNumber(config.value, 'limit', 6),
         random: readBoolean(config.value, 'random'),
       };
-    case 'PROFILE':
-      return {
-        coverImage: resolveAssetUrl(readString(config.value, 'coverImage')),
-        avatar: resolveAssetUrl(readString(config.value, 'avatar')),
-        name: readString(config.value, 'name'),
-        role: readString(config.value, 'role'),
-        bio: readString(config.value, 'bio'),
-        socials: readArray<ProfileSocial>(config.value, 'socials'),
-        stats: readArray<{ label: string; value: string }>(config.value, 'stats'),
-      };
     case 'DATE_CARD':
       return {
         showTime: readBoolean(config.value, 'showTime', true),
@@ -106,10 +62,6 @@ const normalized = computed(() => {
     case 'PHOTO_GALLERY':
       return {
         images: readArray<{ url: string; alt?: string; caption?: string }>(config.value, 'images'),
-      };
-    case 'PROJECT_TREE':
-      return {
-        maxDepth: readNumber(config.value, 'maxDepth', 2),
       };
     default:
       return {};
@@ -162,31 +114,6 @@ const hitokotoSource = computed(() => {
 
 function handleRefreshHitokoto() {
   void refreshHitokoto();
-}
-
-function getSocialIconUrl(social: ProfileSocial) {
-  const icon = social.icon?.trim();
-  if (!icon || icon.startsWith('http')) return icon || '';
-  const simpleIcon = icon === 'douyin' ? 'tiktok' : icon;
-  const color =
-    normalizeIconColor(social.color) ||
-    getSocialDefaultColor(social.platform) ||
-    getSocialDefaultColor(simpleIcon) ||
-    '111827';
-  return `https://cdn.simpleicons.org/${encodeURIComponent(simpleIcon)}/${color}`;
-}
-
-function getSocialLabel(social: ProfileSocial) {
-  return social.label || social.platform || '社交链接';
-}
-
-function normalizeIconColor(value?: string) {
-  const text = value?.trim().replace(/^#/, '') ?? '';
-  return /^[0-9a-fA-F]{6}$/.test(text) ? text : '';
-}
-
-function getSocialDefaultColor(value?: string) {
-  return value ? socialDefaultColors[value.trim().toLowerCase()] || '' : '';
 }
 
 const playlistSource = computed(() => {
@@ -468,12 +395,6 @@ onBeforeUnmount(() => {
         </button>
 
         <div class="music-visual">
-          <img
-            class="vinyl-disc"
-            :class="{ spinning: isPlaying }"
-            src="/images/music-disc-glow.png"
-            alt=""
-          />
           <div class="music-cover-large u-shadow-cover">
             <img v-if="displayCover" :src="displayCover" alt="" />
             <span v-else>Music</span>
@@ -602,45 +523,6 @@ onBeforeUnmount(() => {
         </a>
       </div>
     </template>
-    <template v-else-if="widget.type === 'PROFILE'">
-      <div class="profile-card-new">
-        <div class="profile-content-row">
-          <div class="profile-avatar-wrapper-new">
-            <img
-              v-if="normalized.avatar"
-              class="profile-avatar-img"
-              :src="normalized.avatar as string"
-              :alt="(normalized.name as string) || ''"
-            />
-            <div v-else class="profile-avatar-img profile-avatar-fallback-new">
-              {{ ((normalized.name as string) || 'U').slice(0, 1) }}
-            </div>
-          </div>
-          <div class="profile-info-new">
-            <div class="profile-name-row-new">
-              <strong class="profile-name-new">{{ normalized.name || '星辰' }}</strong>
-              <span class="profile-badge-new">⭐</span>
-            </div>
-            <p class="profile-bio-new">{{ normalized.bio || '热爱技术与设计，专注于创造有价值的产品体验 ✨' }}</p>
-          </div>
-        </div>
-        <div v-if="Array.isArray(normalized.socials) && normalized.socials.length" class="profile-socials-new">
-          <a
-            v-for="social in normalized.socials"
-            :key="social.platform || social.url || social.qrCode"
-            :href="social.url || undefined"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="social-icon-link-new"
-            :title="getSocialLabel(social)"
-          >
-            <img v-if="getSocialIconUrl(social)" :src="getSocialIconUrl(social)" :alt="getSocialLabel(social)" />
-            <span v-else class="social-text-icon">{{ getSocialLabel(social).slice(0, 2) }}</span>
-          </a>
-        </div>
-      </div>
-    </template>
-
     <template v-else-if="widget.type === 'DATE_CARD'">
       <DateCardWidget :widget="widget" :normalized="normalized" />
     </template>
@@ -655,9 +537,6 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <template v-else-if="widget.type === 'PROJECT_TREE'">
-      <ProjectTreeWidget :widget="widget" :normalized="normalized" />
-    </template>
   </section>
 </template>
 
@@ -834,143 +713,6 @@ p {
   }
 }
 
-/* Profile Widget - New Card Style */
-.profile-card-new {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  overflow: hidden;
-  margin: -16px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, #e8f4fd 0%, #f3e8fc 50%, #fce8f3 100%);
-  padding: 24px 20px 20px;
-}
-
-.profile-card-new::before {
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 182, 193, 0.35) 0%, transparent 70%);
-  content: '';
-}
-
-.profile-card-new::after {
-  position: absolute;
-  bottom: -30px;
-  left: -30px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(173, 216, 230, 0.28) 0%, transparent 70%);
-  content: '';
-}
-
-.profile-content-row {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.profile-avatar-wrapper-new {
-  flex-shrink: 0;
-}
-
-.profile-avatar-img {
-  display: grid;
-  width: 72px;
-  height: 72px;
-  place-items: center;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.profile-avatar-fallback-new {
-  font-size: 26px;
-  font-weight: 700;
-  color: #6366f1;
-}
-
-.profile-info-new {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding-top: 4px;
-}
-
-.profile-name-row-new {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.profile-name-new {
-  color: #1a1a2e;
-  font-size: 19px;
-  font-weight: 750;
-  line-height: 1.2;
-}
-
-.profile-badge-new {
-  font-size: 16px;
-}
-
-.profile-bio-new {
-  margin: 0;
-  color: #4a4a6a;
-  font-size: 13px;
-  line-height: 1.65;
-}
-
-.profile-socials-new {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: flex-start;
-  gap: 10px;
-  padding-top: 2px;
-}
-
-.social-icon-link-new {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.social-icon-link-new:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-}
-
-.social-icon-link-new img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-
-.social-text-icon {
-  color: #4a4a6a;
-  font-size: 11px;
-  font-weight: 700;
-}
-
 .link-list {
   display: grid;
   gap: 8px;
@@ -1061,7 +803,7 @@ figcaption {
 
 .music-visual {
   position: relative;
-  height: 146px;
+  height: 132px;
 }
 
 .music-cover-large {
@@ -1084,21 +826,6 @@ figcaption {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.vinyl-disc {
-  position: absolute;
-  left: 68px;
-  top: 6px;
-  width: 126px;
-  height: auto;
-  opacity: 1;
-  object-fit: contain;
-  transform-origin: center;
-}
-
-.vinyl-disc.spinning {
-  animation: vinyl-spin 4.8s linear infinite;
 }
 
 .music-meta {
@@ -1321,15 +1048,6 @@ figcaption {
 .playlist-panel-leave-to {
   opacity: 0;
   transform: translateY(10px) scale(0.98);
-}
-
-@keyframes vinyl-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes hitokoto-refresh-pulse {

@@ -1,160 +1,112 @@
 <script setup lang="ts">
-import type { SiteWidget } from '~/entities/widget/model/types';
-import ProjectTreeNode from './ProjectTreeNode.vue';
-
-const props = defineProps<{ widget: SiteWidget; normalized: Record<string, unknown> }>();
-
-interface TreeNode {
+type TreeNode = {
   name: string;
   type: 'folder' | 'file';
   children?: TreeNode[];
-}
+};
 
-const projectTree: TreeNode = {
-  name: 'one-personal-site',
+type FlatTreeNode = {
+  name: string;
+  type: 'folder' | 'file';
+  depth: number;
+  collapsed: boolean;
+};
+
+const frontendTree: TreeNode = {
+  name: 'lxhcool-frontend',
   type: 'folder',
   children: [
-    {
-      name: 'lxhcool-admin',
-      type: 'folder',
-      children: [
-        { name: 'src', type: 'folder', children: [
-          { name: 'components', type: 'folder' },
-          { name: 'routes', type: 'folder' },
-          { name: 'stores', type: 'folder' },
-          { name: 'features', type: 'folder' },
-          { name: 'hooks', type: 'folder' },
-          { name: 'lib', type: 'folder' },
-          { name: 'main.tsx', type: 'file' },
-        ] },
-        { name: 'public', type: 'folder' },
-        { name: 'vite.config.ts', type: 'file' },
-        { name: 'package.json', type: 'file' },
-      ],
-    },
-    {
-      name: 'lxhcool-backend',
-      type: 'folder',
-      children: [
-        { name: 'src', type: 'folder', children: [
-          { name: 'auth', type: 'folder' },
-          { name: 'posts', type: 'folder' },
-          { name: 'widgets', type: 'folder' },
-          { name: 'prisma', type: 'folder' },
-          { name: 'projects', type: 'folder' },
-          { name: 'friend-links', type: 'folder' },
-          { name: 'music', type: 'folder' },
-          { name: 'uploads', type: 'folder' },
-          { name: 'config', type: 'folder' },
-          { name: 'app.module.ts', type: 'file' },
-          { name: 'main.ts', type: 'file' },
-        ] },
-        { name: 'prisma', type: 'folder', children: [
-          { name: 'schema.prisma', type: 'file' },
-          { name: 'seed.ts', type: 'file' },
-        ] },
-        { name: 'nest-cli.json', type: 'file' },
-        { name: 'package.json', type: 'file' },
-      ],
-    },
-    {
-      name: 'lxhcool-frontend',
-      type: 'folder',
-      children: [
-        { name: 'pages', type: 'folder', children: [
-          { name: 'blog', type: 'folder' },
-          { name: 'friends', type: 'folder' },
-          { name: 'projects', type: 'folder' },
-          { name: 'index.vue', type: 'file' },
-        ] },
-        { name: 'components', type: 'folder', children: [
-          { name: 'widgets', type: 'folder' },
-          { name: 'moments', type: 'folder' },
-        ] },
-        { name: 'entities', type: 'folder', children: [
-          { name: 'post', type: 'folder' },
-          { name: 'widget', type: 'folder' },
-          { name: 'project', type: 'folder' },
-          { name: 'friend-link', type: 'folder' },
-          { name: 'admin-user', type: 'folder' },
-        ] },
-        { name: 'layouts', type: 'folder' },
-        { name: 'composables', type: 'folder' },
-        { name: 'assets/styles', type: 'folder' },
-        { name: 'shared', type: 'folder' },
-        { name: 'public/images', type: 'folder' },
-        { name: 'app.vue', type: 'file' },
-        { name: 'nuxt.config.ts', type: 'file' },
-      ],
-    },
-    { name: 'dev-start.sh', type: 'file' },
-    { name: 'README.md', type: 'file' },
+    { name: 'public', type: 'folder', children: [
+      { name: 'images', type: 'folder' },
+      { name: 'fonts', type: 'folder', children: [
+        { name: 'lxhcool.woff2', type: 'file' },
+        { name: 'lxhcool-bold.woff2', type: 'file' },
+        { name: 'lxhcool-mono.woff2', type: 'file' },
+      ] },
+    ] },
+    { name: 'pages', type: 'folder' },
+    { name: 'entities', type: 'folder' },
+    { name: 'layouts', type: 'folder' },
+    { name: 'composables', type: 'folder' },
+    { name: 'app.vue', type: 'file' },
+    { name: 'nuxt.config.ts', type: 'file' },
+    { name: 'tailwind.config.ts', type: 'file' },
+    { name: 'package.json', type: 'file' },
   ],
 };
 
-const expandedFolders = ref<Set<string>>(new Set(['one-personal-site']));
+function flattenTree(node: TreeNode, depth: number): FlatTreeNode[] {
+  const hasChildren = node.type === 'folder' && Boolean(node.children?.length);
+  const result: FlatTreeNode[] = [{
+    name: node.name,
+    type: node.type,
+    depth,
+    collapsed: node.type === 'folder' && !hasChildren,
+  }];
 
-function toggleFolder(path: string) {
-  const copy = new Set(expandedFolders.value);
-  if (copy.has(path)) {
-    copy.delete(path);
-  } else {
-    copy.add(path);
+  for (const child of node.children ?? []) {
+    result.push(...flattenTree(child, depth + 1));
   }
-  expandedFolders.value = copy;
+  return result;
 }
 
-function isExpanded(path: string) {
-  return expandedFolders.value.has(path);
-}
+const flatTree = flattenTree(frontendTree, 0).slice(1);
 </script>
 
 <template>
-  <div class="project-tree-card">
-    <div class="tree-head">
-      <span class="widget-heading">{{ widget.title || '项目结构' }}</span>
-    </div>
-    <div class="tree-body">
-      <ul class="tree-root">
-        <ProjectTreeNode
-          :node="projectTree"
-          :path="projectTree.name"
-          :depth="0"
-          :expanded-folders="expandedFolders"
-          @toggle="toggleFolder"
-        />
-      </ul>
+  <div class="project-tree-widget">
+    <div
+      v-for="(item, index) in flatTree"
+      :key="`${item.depth}-${item.name}-${index}`"
+      class="tree-item"
+      :class="{ 'tree-folder': item.type === 'folder', 'tree-collapsed': item.collapsed }"
+      :style="{ paddingLeft: `${item.depth * 24}px` }"
+    >
+      <span>{{ item.name }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.project-tree-card {
+.project-tree-widget {
   display: flex;
   flex-direction: column;
-  padding: 16px 18px 18px;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: Apfel Grotezk, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  transform: scale(.8);
+  transform-origin: top left;
 }
 
-.tree-head {
+.tree-item {
   display: flex;
+  min-height: 22.5px;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
+  gap: 10px;
+  color: hsl(212, 20%, 23%);
+  white-space: nowrap;
 }
 
-.tree-head .widget-heading {
-  margin-bottom: 0;
+.tree-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tree-body {
-  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
-  font-size: 12px;
-  line-height: 1.8;
+.tree-folder::before {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2329323D' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: '';
 }
 
-.tree-root {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.tree-collapsed::before {
+  transform: rotate(-90deg);
 }
 </style>

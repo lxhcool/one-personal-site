@@ -12,7 +12,7 @@ export class WidgetsService {
     return this.prisma.siteWidget.findMany({
       where: {
         enabled: true,
-        type: { notIn: ['FRIEND_LINKS', 'PROFILE'] },
+        type: { not: 'FRIEND_LINKS' },
       },
       orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
@@ -20,7 +20,7 @@ export class WidgetsService {
 
   listAdmin() {
     return this.prisma.siteWidget.findMany({
-      where: { type: { notIn: ['FRIEND_LINKS', 'PROFILE'] } },
+      where: { type: { not: 'FRIEND_LINKS' } },
       orderBy: [{ area: 'asc' }, { verticalPosition: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
     });
   }

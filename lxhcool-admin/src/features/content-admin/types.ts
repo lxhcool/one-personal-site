@@ -13,7 +13,6 @@ export type WidgetType =
   | 'MUSIC_PLAYER'
   | 'HITOKOTO'
   | 'FRIEND_LINKS'
-  | 'PROFILE'
   | 'DATE_CARD'
   | 'PHOTO_GALLERY'
   | 'PROJECT_TREE'

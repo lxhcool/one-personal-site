@@ -139,7 +139,7 @@ export function WidgetsPage() {
 
   if (widgets.isError) throw widgets.error
   const rows = [...(widgets.data ?? [])]
-    .filter((widget) => widget.type !== 'FRIEND_LINKS' && widget.type !== 'PROFILE')
+    .filter((widget) => widget.type !== 'FRIEND_LINKS')
     .sort(
       (a, b) => a.sortOrder - b.sortOrder || a.updatedAt.localeCompare(b.updatedAt)
     )
@@ -426,6 +426,10 @@ function WidgetLayoutStudio({
     url.searchParams.set('widgetEditor', '1')
     return url.toString()
   }, [])
+  const previewOrigin = useMemo(
+    () => new URL(FRONTEND_PREVIEW_URL).origin,
+    []
+  )
   const canvasScale = stageSize.width > 0 && stageSize.height > 0
     ? Math.min(
         1,
@@ -455,7 +459,7 @@ function WidgetLayoutStudio({
   function syncWidgets() {
     iframeRef.current?.contentWindow?.postMessage(
       { type: 'widget-editor-sync', widgets: widgetsRef.current },
-      '*'
+      previewOrigin
     )
   }
 
@@ -477,7 +481,10 @@ function WidgetLayoutStudio({
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      if (event.source !== iframeRef.current?.contentWindow) return
+      if (
+        event.source !== iframeRef.current?.contentWindow ||
+        event.origin !== previewOrigin
+      ) return
       const message = event.data as {
         type?: string
         id?: unknown

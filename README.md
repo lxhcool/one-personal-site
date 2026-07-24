@@ -1,83 +1,68 @@
-# Personal Site MVP
+# Personal Site
 
-This workspace contains two independent projects:
+This repository contains three independently built applications that form one personal-site system:
 
-- `lxhcool-frontend`: Nuxt 3 / Vue 3 public frontend with FSD-oriented source boundaries
-- `lxhcool-admin`: Vite React admin system based on shadcn-admin architecture
-- `lxhcool-backend`: NestJS API with Prisma/PostgreSQL schema
+- `lxhcool-frontend`: Nuxt 3 / Vue 3 public site.
+- `lxhcool-admin`: Vite / React administration app.
+- `lxhcool-backend`: NestJS API backed by Prisma and PostgreSQL.
 
-## Current Scope
+The backend is a modular monolith. Public and admin clients share the same API and database, while authentication and route boundaries keep their responsibilities separate.
 
-Implemented as a simple MVP foundation:
+## Architecture
 
-- Public pages: home, blog list/detail, project list/detail, friend links
-- Admin app: register, login, dashboard, and CRUD screens
-- Backend modules: auth, posts, projects, friend links
-- Prisma schema: `AdminUser`, `EmailVerificationCode`, `Post`, `Project`, `FriendLink`
-- Auth: email verification registration through Resend, password login, signed HttpOnly Cookie session
+```text
+Nuxt public site  ── /public/* ──┐
+                                 ├── NestJS API ── Prisma ── PostgreSQL
+React admin app  ── /admin/* ────┘
+                       /auth/*
+```
 
-Media upload, rich admin CRUD forms, Docker deployment, sitemap, and backups are intentionally left for later steps.
+Implemented domains include authentication, articles, moments, projects, friend links, categories, site widgets, media uploads, image thumbnails, and music metadata.
 
-## Backend
+Admin authentication uses Argon2 password hashes and a signed HttpOnly Cookie session. New admin registration currently requires the configured `ADMIN_REGISTRATION_CODE`.
+
+## Local Development
+
+Create local environment files from each application's `.env.example`, install dependencies in all three application directories, then start everything from the repository root:
 
 ```bash
-cd lxhcool-backend
-copy .env.example .env
-npm run prisma:generate
-npm run prisma:migrate
 npm run dev
 ```
 
-Default port: `http://localhost:4000`
+Services are available at:
 
-API documentation: `http://localhost:4000/api-docs`
+- Public site: `http://127.0.0.1:3000`
+- Admin app: `http://127.0.0.1:5173`
+- Backend API: `http://127.0.0.1:4000`
+- Swagger UI: `http://127.0.0.1:4000/api-docs`
 
-Auth and email require these environment variables:
-
-```env
-JWT_SECRET=replace-with-long-random-secret
-RESEND_API_KEY=re_xxxxxxxxx
-MAIL_FROM=Personal Site <noreply@lxhcoool.cn>
-FRONTEND_ORIGIN=http://localhost:3000
-```
-
-Before Resend can send from `noreply@lxhcoool.cn`, the domain `lxhcoool.cn` must be verified in Resend DNS settings.
-
-## Frontend
+Stop the local services with:
 
 ```bash
-cd lxhcool-frontend
-copy .env.example .env
-npm run dev
+npm run dev:stop
 ```
 
-Default port: `http://localhost:3000`
+PostgreSQL must be running and reachable through the backend `DATABASE_URL`. The backend creates local `uploads/images`, `uploads/audio`, and `uploads/videos` directories when it starts.
 
-Frontend required environment variables:
+## Verification
 
-```env
-NUXT_PUBLIC_SITE_URL=http://127.0.0.1:3000
-NUXT_PUBLIC_API_BASE_URL=http://127.0.0.1:4000
-```
-
-## Admin
+Run all build and type checks from the repository root:
 
 ```bash
-cd lxhcool-admin
-copy .env.example .env.local
-npm run dev -- --host 127.0.0.1 --port 5173
+npm run verify
 ```
 
-Default port: `http://127.0.0.1:5173`
-
-The admin app is a separate Vite + React + TypeScript project. It uses shadcn/ui components, TanStack Query, React Router, and the existing NestJS API.
-
-## Verified
-
-Both projects have been build-checked:
+Focused checks are also available:
 
 ```bash
-cd lxhcool-backend && npm run build
-cd lxhcool-frontend && npm run typecheck
-cd lxhcool-frontend && npm run build
+npm run check:backend
+npm run check:frontend
+npm run check:admin
+npm run test:admin
 ```
+
+The admin test suite currently has the broadest automated coverage. Backend integration tests and focused public-site tests remain priorities, especially around authentication, publishing, uploads, and Widget layout behavior.
+
+## Deployment
+
+The current deployment scripts build release archives, deploy them to versioned release directories, run Prisma migrations, switch the active symlink, and manage the Nuxt and NestJS processes with PM2. Uploaded media remains local-disk state and should be moved to shared persistent storage before multi-instance deployment.
