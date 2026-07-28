@@ -28,10 +28,6 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
 }
 
-enum VerificationPurpose {
-  REGISTER
-}
-
 enum CategoryType {
   POST
   FRIEND_LINK
@@ -55,19 +51,6 @@ enum WidgetType {
   PHOTO_GALLERY
   PROJECT_TREE
   KEYBOARD
-}
-
-model EmailVerificationCode {
-  id         String              @id @default(cuid())
-  email      String
-  codeHash   String
-  purpose    VerificationPurpose @default(REGISTER)
-  expiresAt  DateTime
-  consumedAt DateTime?
-  attempts   Int                 @default(0)
-  createdAt  DateTime            @default(now())
-
-  @@index([email, purpose, createdAt])
 }
 
 model Post {

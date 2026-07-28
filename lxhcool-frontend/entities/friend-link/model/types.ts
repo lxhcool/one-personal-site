@@ -1,12 +1,3 @@
-export type FriendLink = {
-  id: string;
-  name: string;
-  url: string;
-  category: string | null;
-  logo: string | null;
-  description: string | null;
-  sortOrder: number;
-  isVisible: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { components } from '~/shared/api/generated/api-schema';
+
+export type FriendLink = components['schemas']['FriendLinkResponseDto'];

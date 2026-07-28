@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/table'
 import { PageShell } from './components/page-shell'
 import { categoriesApi, resolveAssetUrl, uploadsApi } from './api'
-import type { CategoryType, ContentCategory } from './types'
+import type { CategoryType, ContentCategory, UpdateCategoryPayload } from './types'
 
 type CategoryManagementPageProps = {
   type: CategoryType
@@ -63,12 +63,7 @@ export function CategoryManagementPage({
       payload,
     }: {
       id: string
-      payload: {
-        name?: string
-        logo?: string | null
-        backgroundImage?: string | null
-        sortOrder?: number
-      }
+      payload: UpdateCategoryPayload
     }) => categoriesApi.update(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   })

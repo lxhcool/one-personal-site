@@ -32,12 +32,8 @@ defineProps<{
   overflow: clip;
   border: 0;
   border-radius: 9px 9px 0 0;
-  background: #fff;
-  box-shadow:
-    rgba(0, 0, 0, 0) 0 0 0 0,
-    rgba(0, 0, 0, 0) 0 0 0 0,
-    rgba(11, 15, 19, 0.035) 0 8px 24px 0,
-    rgba(11, 15, 19, 0.04) 0 1px 2px 0;
+  background: var(--content-surface);
+  box-shadow: var(--content-shadow);
 }
 
 .window-content {

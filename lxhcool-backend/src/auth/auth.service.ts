@@ -59,10 +59,10 @@ export class AuthService {
 
     const user = await this.prisma.adminUser.findUnique({
       where: { id: session.sub },
-      select: { id: true, email: true, name: true, avatar: true, createdAt: true },
+      select: { id: true, email: true, name: true, avatar: true },
     });
     if (!user) throw new UnauthorizedException('Admin login required');
-    return user;
+    return this.toAdminUser(user);
   }
 
   async updateProfile(req: Request, dto: UpdateProfileDto) {
@@ -73,10 +73,10 @@ export class AuthService {
         name: dto.name?.trim() || null,
         avatar: dto.avatar?.trim() || null,
       },
-      select: { id: true, email: true, name: true, avatar: true, createdAt: true },
+      select: { id: true, email: true, name: true, avatar: true },
     });
 
-    return user;
+    return this.toAdminUser(user);
   }
 
   private requireSession(req: Request) {

@@ -1,27 +1,6 @@
-export type WidgetArea = 'LEFT' | 'RIGHT';
-export type WidgetVerticalPosition = 'TOP' | 'BOTTOM';
+import type { components } from '~/shared/api/generated/api-schema';
 
-export type WidgetType =
-  | 'MUSIC_PLAYER'
-  | 'HITOKOTO'
-  | 'FRIEND_LINKS'
-  | 'DATE_CARD'
-  | 'PHOTO_GALLERY'
-  | 'PROJECT_TREE'
-  | 'KEYBOARD';
-
-export type SiteWidget = {
-  id: string;
-  area: WidgetArea;
-  verticalPosition: WidgetVerticalPosition;
-  horizontalOffset: number;
-  verticalOffset: number;
-  rotation: number;
-  type: WidgetType;
-  title: string | null;
-  enabled: boolean;
-  sortOrder: number;
-  config: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
+export type SiteWidget = components['schemas']['WidgetResponseDto'];
+export type WidgetArea = SiteWidget['area'];
+export type WidgetVerticalPosition = SiteWidget['verticalPosition'];
+export type WidgetType = SiteWidget['type'];

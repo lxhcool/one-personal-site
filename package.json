@@ -4,10 +4,13 @@
   "scripts": {
     "dev": "./dev-start.sh",
     "dev:stop": "./dev-stop.sh",
-    "check:backend": "npm --prefix lxhcool-backend run build",
-    "check:frontend": "npm --prefix lxhcool-frontend run typecheck",
+    "check:database": "npm --prefix lxhcool-backend run prisma:validate",
+    "check:backend": "npm run check:database && npm --prefix lxhcool-backend run build",
+    "check:frontend": "npm --prefix lxhcool-frontend run typecheck && npm --prefix lxhcool-frontend run build",
     "check:admin": "npm --prefix lxhcool-admin run build",
     "test:admin": "npm --prefix lxhcool-admin run test",
-    "verify": "npm run check:backend && npm run check:frontend && npm run check:admin"
+    "generate:api": "npm --prefix lxhcool-backend run openapi:generate",
+    "verify": "npm run check:backend && npm run check:frontend && npm run check:admin",
+    "verify:browser": "npm run verify && npm run test:admin"
   }
 }

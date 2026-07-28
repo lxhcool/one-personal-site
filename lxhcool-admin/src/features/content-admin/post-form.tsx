@@ -31,7 +31,7 @@ import {
   uploadsApi,
   musicApi,
 } from './api'
-import type { PostType, PublishStatus } from './types'
+import type { CreatePostPayload, PostType, PublishStatus } from './types'
 
 type MediaConfig = Record<string, unknown>
 type MomentKind = 'TEXT' | 'PHOTO' | 'MUSIC' | 'VIDEO'
@@ -77,7 +77,7 @@ export function PostFormPage({
     queryFn: () => categoriesApi.list('POST'),
   })
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
+    mutationFn: (payload: CreatePostPayload) =>
       postId ? postsApi.update(postId, payload) : postsApi.create(payload),
     onSuccess: (_data, variables) =>
       navigate({ to: variables.type === 'MOMENT' ? '/moments' : '/posts' }),

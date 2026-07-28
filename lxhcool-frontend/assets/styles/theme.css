@@ -44,11 +44,18 @@
   --right-column: 260px;
   --shell-gap: 20px;
   --background-color-primary: var(--palette-50);
+  --navigation-text: var(--text-muted);
+  --navigation-text-hover: var(--text);
+  --navigation-text-active: #111315;
+  --navigation-focus-ring: rgba(77, 154, 117, 0.38);
+  --site-logo-filter: none;
+  --content-surface: transparent;
+  --content-shadow: none;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page-bg: #0c0a09;
+  --page-bg: oklch(14.5% .012 44);
   --card-bg: #182126;
   --text: #d9dcda;
   --text-muted: #909b9f;
@@ -60,6 +67,9 @@
   --paper-surface-soft: rgba(27, 38, 43, 0.62);
   --paper-border: rgba(132, 151, 157, 0.23);
   --background-color-primary: var(--palette-950);
+  --navigation-text-active: #f4f4f5;
+  --navigation-focus-ring: rgba(120, 196, 157, 0.5);
+  --site-logo-filter: invert(1) hue-rotate(180deg) contrast(1.05);
 }
 
 body {
@@ -88,11 +98,6 @@ button {
 }
 
 /* Night room treatment. Component structure stays intact; only the light changes. */
-:root[data-theme='dark'] .workbench-window {
-  color: var(--text);
-  box-shadow: 14px 18px 38px rgba(0, 0, 0, 0.34), inset 1px 1px 0 rgba(178, 202, 207, 0.05);
-}
-
 :root[data-theme='dark'] .window-bar {
   border-color: rgba(132, 151, 157, 0.16) !important;
   background: linear-gradient(180deg, rgba(45, 57, 62, 0.82), rgba(22, 31, 36, 0.92)) !important;

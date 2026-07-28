@@ -5,7 +5,7 @@ import type { SiteWidget } from '~/entities/widget/model/types';
 import DateCardWidget from './ui/DateCardWidget.vue';
 import { getRequiredPublicRuntimeConfig } from '~/shared/config/env';
 import { requestPublicApi } from '~/shared/api/client';
-import { readArray, readBoolean, readNumber, readString } from '~/shared/widgets/lib/config';
+import { readArray, readBoolean, readNumber, readString } from './strategies/config';
 
 const props = defineProps<{
   widget: SiteWidget;

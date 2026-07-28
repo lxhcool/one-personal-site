@@ -30,6 +30,7 @@ import { widgetsApi } from './api'
 import { FRONTEND_PREVIEW_URL } from './env'
 import type {
   SiteWidget,
+  UpdateWidgetPayload,
   WidgetArea,
   WidgetType,
   WidgetVerticalPosition,
@@ -106,7 +107,7 @@ export function WidgetsPage() {
     },
   })
   const updateWidget = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateWidgetPayload }) =>
       widgetsApi.update(id, payload),
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: ['admin-widgets'] })
@@ -127,7 +128,7 @@ export function WidgetsPage() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-widgets'] }),
   })
   const saveVisualLayout = useMutation({
-    mutationFn: async (changes: Record<string, Record<string, unknown>>) => {
+    mutationFn: async (changes: Record<string, UpdateWidgetPayload>) => {
       await Promise.all(
         Object.entries(changes).map(([id, payload]) =>
           widgetsApi.update(id, payload)

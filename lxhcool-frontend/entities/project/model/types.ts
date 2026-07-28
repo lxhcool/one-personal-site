@@ -1,21 +1,3 @@
-export type Project = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  content: string | null;
-  coverImage: string | null;
-  gallery: string[];
-  techStack: string[];
-  liveUrl: string | null;
-  githubUrl: string | null;
-  featured: boolean;
-  sortOrder: number;
-  status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
-  publishedAt: string | null;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  ogImage: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { components } from '~/shared/api/generated/api-schema';
+
+export type Project = components['schemas']['ProjectResponseDto'];

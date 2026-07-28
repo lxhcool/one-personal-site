@@ -1,6 +1,3 @@
-export type AdminUser = {
-  id: string;
-  email: string;
-  name?: string | null;
-  avatar?: string | null;
-};
+import type { components } from '~/shared/api/generated/api-schema';
+
+export type AdminUser = components['schemas']['AdminUserResponseDto'];

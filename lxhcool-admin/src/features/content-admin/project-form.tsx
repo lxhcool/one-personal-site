@@ -23,7 +23,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { PageShell } from './components/page-shell'
 import { optionalString, projectsApi, toStringList } from './api'
-import type { PublishStatus } from './types'
+import type { CreateProjectPayload, PublishStatus } from './types'
 
 export function ProjectFormPage({ projectId }: { projectId?: string }) {
   const navigate = useNavigate()
@@ -33,7 +33,7 @@ export function ProjectFormPage({ projectId }: { projectId?: string }) {
     enabled: Boolean(projectId),
   })
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
+    mutationFn: (payload: CreateProjectPayload) =>
       projectId
         ? projectsApi.update(projectId, payload)
         : projectsApi.create(payload),

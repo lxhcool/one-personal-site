@@ -52,6 +52,23 @@ Run all build and type checks from the repository root:
 npm run verify
 ```
 
+Browser-based admin tests are intentionally separate because they require a local
+Playwright Chromium installation:
+
+```bash
+npm run verify:browser
+```
+
+## API Contracts
+
+The backend OpenAPI document is the source of truth for generated frontend types. After changing backend request or response DTOs, regenerate the committed contracts:
+
+```bash
+npm run generate:api
+```
+
+Generated files live in `lxhcool-admin/src/generated` and `lxhcool-frontend/shared/api/generated`; do not edit them manually.
+
 Focused checks are also available:
 
 ```bash

@@ -7,8 +7,11 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "openapi:export": "npm run build && node dist/openapi.js",
+    "openapi:generate": "npm run openapi:export && openapi-typescript openapi.json -o ../lxhcool-admin/src/generated/api-schema.ts && openapi-typescript openapi.json -o ../lxhcool-frontend/shared/api/generated/api-schema.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
@@ -22,13 +25,9 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "reflect-metadata": "^0.2.2",
-    "resend": "^6.6.0",
     "rxjs": "^7.8.2",
     "sharp": "^0.35.3",
     "swagger-ui-express": "^5.0.1"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.7",
@@ -38,6 +37,7 @@
     "@types/express": "^5.0.3",
     "@types/multer": "^2.2.0",
     "@types/node": "^24.0.10",
+    "openapi-typescript": "^7.13.0",
     "prisma": "^6.11.1",
     "tsx": "^4.23.0",
     "typescript": "^5.8.3"

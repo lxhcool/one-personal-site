@@ -1,76 +1,91 @@
 import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { ok } from '../common/api-response';
+import { ApiDataResponse } from '../common/openapi-response.decorator';
+import { NeteaseMetadataResponseDto } from './dto/netease-metadata-response.dto';
+import { NeteasePlaylistResponseDto } from './dto/netease-playlist-response.dto';
+import { NeteasePlaylistTrackResponseDto } from './dto/netease-playlist-track-response.dto';
 
 @Controller('admin/music')
 @UseGuards(AdminAuthGuard)
+@ApiTags('Admin Music')
 export class MusicController {
   @Get('netease/metadata')
+  @ApiDataResponse(NeteaseMetadataResponseDto)
   async getNeteaseMetadata(@Query('url') url: string) {
     return getNeteaseMetadata(url);
   }
 
   @Get('netease/playlist')
+  @ApiDataResponse(NeteasePlaylistResponseDto, {
+    extraModels: [NeteasePlaylistTrackResponseDto, NeteaseMetadataResponseDto],
+  })
   async getNeteasePlaylist(@Query('url') url: string) {
     return getNeteasePlaylist(url);
   }
 }
 
 @Controller('public/music')
+@ApiTags('Public Music')
 export class PublicMusicController {
   @Get('netease/metadata')
+  @ApiDataResponse(NeteaseMetadataResponseDto)
   async getNeteaseMetadata(@Query('url') url: string) {
     return getNeteaseMetadata(url);
   }
 
   @Get('netease/playlist')
+  @ApiDataResponse(NeteasePlaylistResponseDto, {
+    extraModels: [NeteasePlaylistTrackResponseDto, NeteaseMetadataResponseDto],
+  })
   async getNeteasePlaylist(@Query('url') url: string) {
     return getNeteasePlaylist(url);
   }
 }
 
 async function getNeteaseMetadata(url: string) {
-    const id = extractNeteaseSongId(url);
-    if (!id) {
-      throw new BadRequestException('Invalid NetEase Music song URL');
-    }
+  const id = extractNeteaseSongId(url);
+  if (!id) {
+    throw new BadRequestException('Invalid NetEase Music song URL');
+  }
 
-    const response = await fetch(
-      `https://music.163.com/api/song/detail/?ids=[${encodeURIComponent(id)}]`,
-      {
-        headers: {
-          Referer: 'https://music.163.com/',
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
-        },
+  const response = await fetch(
+    `https://music.163.com/api/song/detail/?ids=[${encodeURIComponent(id)}]`,
+    {
+      headers: {
+        Referer: 'https://music.163.com/',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
       },
-    );
+    },
+  );
 
-    if (!response.ok) {
-      throw new BadRequestException('Failed to fetch NetEase Music metadata');
-    }
+  if (!response.ok) {
+    throw new BadRequestException('Failed to fetch NetEase Music metadata');
+  }
 
-    const body = (await response.json()) as {
-      songs?: Array<{
-        name?: string;
-        artists?: Array<{ name?: string }>;
-        album?: { picUrl?: string };
-        duration?: number;
-        dt?: number;
-      }>;
-    };
-    const song = body.songs?.[0];
-    if (!song) {
-      throw new BadRequestException('NetEase Music song not found');
-    }
+  const body = (await response.json()) as {
+    songs?: Array<{
+      name?: string;
+      artists?: Array<{ name?: string }>;
+      album?: { picUrl?: string };
+      duration?: number;
+      dt?: number;
+    }>;
+  };
+  const song = body.songs?.[0];
+  if (!song) {
+    throw new BadRequestException('NetEase Music song not found');
+  }
 
-    return ok({
-      id,
-      title: song.name ?? '',
-      artist: song.artists?.map((artist) => artist.name).filter(Boolean).join(' / ') ?? '',
-      cover: song.album?.picUrl ?? '',
-      duration: readSongDuration(song),
-    });
+  return ok<NeteaseMetadataResponseDto>({
+    id,
+    title: song.name ?? '',
+    artist: song.artists?.map((artist) => artist.name).filter(Boolean).join(' / ') ?? '',
+    cover: song.album?.picUrl ?? '',
+    duration: readSongDuration(song),
+  });
 }
 
 async function getNeteasePlaylist(url: string) {
@@ -119,12 +134,14 @@ async function getNeteasePlaylist(url: string) {
     throw new BadRequestException('NetEase Music playlist not found');
   }
 
-  return ok({
+  return ok<NeteasePlaylistResponseDto>({
     id,
     title: playlist?.name ?? '',
     cover: playlist?.coverImgUrl ?? '',
     trackCount: ids.length || tracks.length,
-    tracks: await injectAudioUrls(tracks.map(formatNeteaseSong).filter((track) => track.id)),
+    tracks: await injectAudioUrls(
+      tracks.map(formatNeteaseSong).filter((track): track is NeteasePlaylistTrackResponseDto => Boolean(track.id)),
+    ),
   });
 }
 
@@ -165,7 +182,7 @@ function chunk<T>(items: T[], size: number) {
   return chunks;
 }
 
-function formatNeteaseSong(song: NeteaseSong) {
+function formatNeteaseSong(song: NeteaseSong): NeteasePlaylistTrackResponseDto {
   const id = song.id ? String(song.id) : '';
   const artistSource = song.artists ?? song.ar ?? [];
   return {
@@ -180,7 +197,7 @@ function formatNeteaseSong(song: NeteaseSong) {
   };
 }
 
-async function injectAudioUrls(tracks: ReturnType<typeof formatNeteaseSong>[]) {
+async function injectAudioUrls(tracks: NeteasePlaylistTrackResponseDto[]) {
   const ids = tracks.map((t) => t.id).filter(Boolean);
   if (ids.length === 0) return tracks;
   try {

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { PageShell } from './components/page-shell'
 import { categoriesApi, friendLinksApi, optionalString } from './api'
+import type { CreateFriendLinkPayload } from './types'
 
 export function FriendFormPage({ friendId }: { friendId?: string }) {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export function FriendFormPage({ friendId }: { friendId?: string }) {
     queryFn: () => categoriesApi.list('FRIEND_LINK'),
   })
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
+    mutationFn: (payload: CreateFriendLinkPayload) =>
       friendId
         ? friendLinksApi.update(friendId, payload)
         : friendLinksApi.create(payload),

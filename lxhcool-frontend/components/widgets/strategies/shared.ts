@@ -1,4 +1,4 @@
-import { readArray, readBoolean, readNumber, readString } from '~/shared/widgets/lib/config';
+import { readArray, readBoolean, readNumber, readString } from './config';
 
 export function resolveAssetUrl(url?: string | null, apiBaseUrl?: string) {
   if (!url) return '';

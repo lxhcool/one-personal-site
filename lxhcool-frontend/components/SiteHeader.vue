@@ -5,10 +5,10 @@ const route = useRoute();
 const isMenuOpen = ref(false);
 
 const navigation = [
-  { label: '动态', path: '/', suffix: '.log' },
-  { label: '文章', path: '/blog', suffix: '.md' },
-  { label: '项目', path: '/projects', suffix: '.dir' },
-  { label: '友链', path: '/friends', suffix: '.link' },
+  { label: '动态', path: '/' },
+  { label: '文章', path: '/blog' },
+  { label: '项目', path: '/projects' },
+  { label: '友链', path: '/friends' },
 ];
 
 function isActive(path: string) {
@@ -30,8 +30,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
 
 <template>
   <header class="site-header">
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-[90px] bg-linear-to-b from-(--background-color-primary) to-transparent" />
-
     <div class="site-header__inner">
       <NuxtLink to="/" class="site-brand" aria-label="lxhcool 首页">
         <img
@@ -52,7 +50,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
           :class="{ 'is-active': isActive(item.path) }"
           :aria-current="isActive(item.path) ? 'page' : undefined"
         >
-          <span>{{ item.label }}</span><small>{{ item.suffix }}</small>
+          {{ item.label }}
         </NuxtLink>
       </nav>
 
@@ -85,8 +83,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
           :class="{ 'is-active': isActive(item.path) }"
           :aria-current="isActive(item.path) ? 'page' : undefined"
         >
-          <span>{{ item.label }}</span>
-          <small>{{ item.suffix }}</small>
+          {{ item.label }}
         </NuxtLink>
       </nav>
     </Transition>
@@ -96,94 +93,89 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
 <style scoped>
 .site-header {
   position: fixed;
-  inset: 0 0 auto;
-  z-index: 50;
-  height: 64px;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  width: 220px;
+  height: 100vh;
+  padding: 28px 20px 24px;
+  border-right: none;
+  background: var(--background-color-primary);
+  flex-direction: column;
 }
 
 .site-header__inner {
-  position: relative;
-  z-index: 1;
   display: flex;
-  width: min(1280px, calc(100% - 48px));
-  height: 58px;
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 28px;
+  width: 100%;
+  height: 100%;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0;
 }
 
 .site-brand {
-  display: inline-flex;
-  width: 136px;
-  height: 34px;
+  display: flex;
+  align-self: stretch;
+  width: 100%;
+  height: 32px;
   align-items: center;
-  flex: 0 0 136px;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  color: var(--navigation-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  margin-right: 12px;
+  margin-bottom: 36px;
+  margin-left: 4px;
+  text-decoration: none;
+  transition: color .15s;
 }
 
 .site-brand__logo {
-  width: auto;
-  height: 28px;
+  width: 148px;
+  height: 16px;
   object-fit: contain;
   object-position: left center;
-}
-
-:global(:root[data-theme='dark']) .site-brand__logo {
-  filter: invert(1) hue-rotate(180deg) contrast(1.05);
+  filter: var(--site-logo-filter);
 }
 
 .desktop-nav {
   display: flex;
-  align-items: center;
-  gap: 3px;
+  width: 100%;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .desktop-nav__link {
-  position: relative;
-  display: inline-flex;
-  height: 30px;
-  align-items: baseline;
-  gap: 1px;
-  padding: 0 9px;
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0;
-  line-height: 30px;
-  transition: color 140ms ease, background-color 140ms ease;
-}
-
-.desktop-nav__link small,
-.mobile-nav__link small {
-  color: color-mix(in srgb, var(--text-muted) 62%, transparent);
-  font: inherit;
+  display: flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 8px;
+  color: var(--navigation-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  text-decoration: none;
+  transition: color .15s;
 }
 
 .desktop-nav__link:hover {
-  background: color-mix(in srgb, var(--text) 5%, transparent);
-  color: var(--text);
+  color: var(--navigation-text-hover);
 }
 
 .desktop-nav__link.is-active {
-  color: var(--text);
-}
-
-.desktop-nav__link.is-active::after {
-  position: absolute;
-  right: 9px;
-  bottom: 1px;
-  left: 9px;
-  height: 1px;
-  background: #4d9a75;
-  content: '';
+  color: var(--navigation-text-active);
 }
 
 .site-brand:focus-visible,
 .desktop-nav__link:focus-visible,
 .mobile-nav__link:focus-visible,
 .mobile-menu-button:focus-visible {
-  outline: 2px solid rgba(77, 154, 117, 0.38);
+  outline: 2px solid var(--navigation-focus-ring);
   outline-offset: 3px;
 }
 
@@ -192,19 +184,37 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
   display: none;
 }
 
-@media (max-width: 680px) {
+@media (max-width: 1120px) {
+  .site-header {
+    right: 0;
+    display: block;
+    width: auto;
+    height: 64px;
+    padding: 0;
+    background: linear-gradient(to bottom, var(--background-color-primary), transparent);
+  }
+
   .site-header__inner {
-    width: calc(100% - 24px);
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 20px);
     height: 54px;
+    margin: 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: 28px;
   }
 
   .site-brand {
     width: 116px;
+    height: 34px;
+    margin: 0;
     flex-basis: 116px;
   }
 
   .site-brand__logo {
-    height: 24px;
+    height: 16px;
   }
 
   .desktop-nav {
@@ -242,32 +252,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape));
     display: flex;
     min-height: 38px;
     align-items: center;
-    justify-content: space-between;
     padding: 0 10px;
-    border-radius: 5px;
-    color: var(--text-muted);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0;
+    color: var(--navigation-text);
+    font-size: 13px;
+    font-weight: 500;
   }
 
-  .mobile-nav__link:hover,
+  .mobile-nav__link:hover {
+    color: var(--navigation-text-hover);
+  }
+
   .mobile-nav__link.is-active {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
-    color: var(--text);
-  }
-
-  .mobile-nav__link.is-active::before {
-    width: 4px;
-    height: 4px;
-    margin-right: 7px;
-    border-radius: 50%;
-    background: #4d9a75;
-    content: '';
-  }
-
-  .mobile-nav__link.is-active span {
-    margin-right: auto;
+    color: var(--navigation-text-active);
   }
 }
 
