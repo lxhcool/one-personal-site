@@ -17,7 +17,7 @@ $tempRoot = Join-Path $root ".deploy-tmp-$releaseId"
 function Invoke-Checked {
   param(
     [Parameter(Mandatory)] [string]$FilePath,
-    [Parameter(ValueFromRemainingArguments)] [string[]]$Arguments
+    [string[]]$Arguments = @()
   )
 
   & $FilePath @Arguments
@@ -39,7 +39,7 @@ function Invoke-NpmBuild {
       Set-Item -Path "Env:$($entry.Key)" -Value $entry.Value
     }
     foreach ($command in $Commands) {
-      Invoke-Checked npm.cmd run $command
+      Invoke-Checked npm.cmd @('run', $command)
     }
   }
   finally {
@@ -70,12 +70,12 @@ try {
   $adminArchive = Join-Path $tempRoot "lxhcool-admin-$releaseId.tar.gz"
   $backendArchive = Join-Path $tempRoot "lxhcool-backend-$releaseId.tar.gz"
 
-  Invoke-Checked tar -czf $frontendArchive -C (Join-Path $root 'lxhcool-frontend') .output
-  Invoke-Checked tar -czf $adminArchive -C (Join-Path $root 'lxhcool-admin') dist
-  Invoke-Checked tar -czf $backendArchive -C (Join-Path $root 'lxhcool-backend') dist prisma package.json package-lock.json
+  Invoke-Checked tar @('-czf', $frontendArchive, '-C', (Join-Path $root 'lxhcool-frontend'), '.output')
+  Invoke-Checked tar @('-czf', $adminArchive, '-C', (Join-Path $root 'lxhcool-admin'), 'dist')
+  Invoke-Checked tar @('-czf', $backendArchive, '-C', (Join-Path $root 'lxhcool-backend'), 'dist', 'prisma', 'package.json', 'package-lock.json')
 
-  Invoke-Checked scp -o BatchMode=yes $frontendArchive $adminArchive $backendArchive (Join-Path $PSScriptRoot 'deploy-remote.sh') "${Server}:/tmp/"
-  Invoke-Checked ssh -o BatchMode=yes $Server "bash /tmp/deploy-remote.sh '$releaseId' '$BasePath' '$SiteUrl'"
+  Invoke-Checked scp @('-o', 'BatchMode=yes', $frontendArchive, $adminArchive, $backendArchive, (Join-Path $PSScriptRoot 'deploy-remote.sh'), "${Server}:/tmp/")
+  Invoke-Checked ssh @('-o', 'BatchMode=yes', $Server, "bash /tmp/deploy-remote.sh '$releaseId' '$BasePath' '$SiteUrl'")
 
   $checks = @(
     "$SiteUrl/",
@@ -92,7 +92,7 @@ try {
   }
 
   if ($Push) {
-    Invoke-Checked git -C $root push origin main
+    Invoke-Checked git @('-C', $root, 'push', 'origin', 'main')
   }
 
   Write-Host "Deployment complete: $releaseId"
