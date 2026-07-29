@@ -27,6 +27,12 @@ defineProps<{
             <span v-if="featured">featured</span>
           </div>
           <h1>{{ title }}</h1>
+          <dl v-if="metaItems?.length" class="detail-meta-inline">
+            <div v-for="item in metaItems" :key="`${item.label ?? 'meta'}-${item.value}`">
+              <dt v-if="item.label">{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          </dl>
           <p v-if="description" class="detail-description">{{ description }}</p>
 
           <div v-if="$slots.actions" class="detail-actions">
@@ -41,13 +47,7 @@ defineProps<{
         <slot />
       </article>
 
-      <aside v-if="metaItems?.length || $slots.aside" class="detail-rail">
-        <dl v-if="metaItems?.length" class="detail-meta-list">
-          <div v-for="item in metaItems" :key="`${item.label ?? 'meta'}-${item.value}`">
-            <dt v-if="item.label">{{ item.label }}</dt>
-            <dd>{{ item.value }}</dd>
-          </div>
-        </dl>
+      <aside v-if="$slots.aside" class="detail-rail">
         <slot name="aside" />
       </aside>
     </div>
@@ -63,7 +63,7 @@ defineProps<{
   --detail-surface: color-mix(in oklch, var(--page-bg) 86%, white 14%);
   --detail-chip: color-mix(in oklch, var(--page-bg) 82%, var(--text) 8%);
   --detail-accent: oklch(52% .07 150);
-  width: min(920px, calc(100vw - 32px));
+  width: min(884px, calc(100vw - 32px));
   margin-left: 50%;
   color: var(--detail-ink);
   transform: translateX(-50%);
@@ -81,7 +81,7 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 26px;
+  margin: 0 0 18px;
   color: var(--detail-muted);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
@@ -99,7 +99,7 @@ defineProps<{
 .detail-layout {
   display: grid;
   grid-template-columns: minmax(0, 680px) 184px;
-  gap: 56px;
+  gap: 44px;
   align-items: start;
 }
 
@@ -110,59 +110,77 @@ defineProps<{
 
 .detail-hero {
   position: relative;
-  padding: 0 0 34px;
+  padding: 0 0 20px;
   border-bottom: 1px solid var(--detail-line);
-}
-
-.detail-hero::after {
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 88px;
-  height: 1px;
-  background: var(--detail-accent);
-  content: '';
 }
 
 .detail-kicker {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
   color: var(--detail-muted);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
-  letter-spacing: .09em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .detail-kicker span {
-  padding: 4px 7px;
-  border: 1px solid var(--detail-soft-line);
-  border-radius: 999px;
-  background: var(--detail-chip);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .detail-kicker span:first-child {
-  color: var(--detail-accent);
+  color: var(--detail-muted);
 }
 
 .detail-hero h1 {
-  max-width: 11ch;
+  max-width: none;
   margin: 0;
   color: var(--detail-ink);
-  font-size: clamp(42px, 8vw, 88px);
-  font-weight: 760;
-  letter-spacing: -.075em;
-  line-height: .88;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.55;
+}
+
+.detail-meta-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 10px 0 0;
+  color: var(--detail-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.detail-meta-inline div {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.detail-meta-inline dt {
+  color: color-mix(in oklch, var(--detail-muted) 72%, transparent);
+  font-size: 9px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.detail-meta-inline dd {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .detail-description {
   max-width: 62ch;
-  margin: 24px 0 0;
+  margin: 12px 0 0;
   color: var(--detail-muted);
-  font-size: 15px;
-  line-height: 1.85;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .detail-actions {
@@ -173,7 +191,7 @@ defineProps<{
 }
 
 .detail-cover {
-  margin: 34px 0;
+  margin: 22px 0;
 }
 
 .detail-rail {
@@ -184,32 +202,6 @@ defineProps<{
   min-width: 0;
   padding-left: 18px;
   border-left: 1px solid var(--detail-line);
-}
-
-.detail-meta-list {
-  display: grid;
-  gap: 17px;
-  margin: 0;
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-.detail-meta-list div {
-  display: grid;
-  gap: 4px;
-}
-
-.detail-meta-list dt {
-  color: var(--detail-muted);
-  font-size: 9px;
-  letter-spacing: .11em;
-  text-transform: uppercase;
-}
-
-.detail-meta-list dd {
-  margin: 0;
-  color: var(--detail-ink);
-  font-size: 11px;
-  line-height: 1.55;
 }
 
 @media (max-width: 1120px) {
@@ -230,9 +222,6 @@ defineProps<{
     border-left: 0;
   }
 
-  .detail-meta-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 560px) {
@@ -241,12 +230,8 @@ defineProps<{
   }
 
   .detail-hero h1 {
-    max-width: 12ch;
-    font-size: clamp(38px, 16vw, 64px);
-  }
-
-  .detail-meta-list {
-    grid-template-columns: 1fr;
+    max-width: none;
+    font-size: 18px;
   }
 }
 </style>

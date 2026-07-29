@@ -94,34 +94,25 @@ function formatDate(value?: string | null) {
 
 <template>
   <main>
-    <WorkbenchWindow class="moments-window" path="~/moments" :status="`${posts.length} 条动态`">
-      <section class="moments-feed" aria-label="最近动态">
-        <header class="moment-index">
-          <div>
-            <span>RECENT MOMENTS</span>
-            <strong>生活与开发的片段</strong>
-          </div>
-          <small>{{ String(posts.length).padStart(2, '0') }} entries</small>
-        </header>
+    <section class="moments-feed" aria-label="最近动态">
+      <div v-if="posts.length" class="moment-list">
+        <article v-for="post in posts" :key="post.id" class="moment-entry">
+          <img class="moment-avatar" :src="authorAvatar" :alt="authorName" />
 
-        <div v-if="posts.length" class="moment-list">
-          <article v-for="post in posts" :key="post.id" class="moment-entry">
-            <img class="moment-avatar" :src="authorAvatar" :alt="authorName" />
+          <div class="moment-body">
+            <header class="moment-author">
+              <strong>{{ authorName }}</strong>
+              <time :datetime="post.publishedAt || post.createdAt">
+                {{ formatDate(post.publishedAt || post.createdAt) }}
+              </time>
+            </header>
 
-            <div class="moment-body">
-              <header class="moment-author">
-                <strong>{{ authorName }}</strong>
-                <time :datetime="post.publishedAt || post.createdAt">
-                  {{ formatDate(post.publishedAt || post.createdAt) }}
-                </time>
-              </header>
-
-              <p v-if="post.title" class="moment-copy">{{ post.title }}</p>
+            <p v-if="post.title" class="moment-copy">{{ post.title }}</p>
 
             <div
               v-if="getMomentPhotos(post.media, post.title).length"
-                class="moment-photos"
-                :class="`photo-count-${Math.min(getMomentPhotos(post.media, post.title).length, 9)}`"
+              class="moment-photos"
+              :class="`photo-count-${Math.min(getMomentPhotos(post.media, post.title).length, 9)}`"
             >
               <button
                 v-for="(photo, photoIndex) in getMomentPhotos(post.media, post.title)"
@@ -142,13 +133,13 @@ function formatDate(value?: string | null) {
             <MomentMusicCard
               v-if="readMediaString(getMomentMusic(post.media), 'audioUrl') || readMediaString(getMomentMusic(post.media), 'embedUrl') || readMediaString(getMomentMusic(post.media), 'externalUrl')"
               :music="getMomentMusic(post.media)"
-                class="moment-music"
-                :fallback-photo="readMediaStringArray(post.media, 'photos')[0]"
+              class="moment-music"
+              :fallback-photo="readMediaStringArray(post.media, 'photos')[0]"
             />
 
             <div
               v-if="readMediaString(getMomentVideo(post.media), 'videoUrl') || readMediaString(getMomentVideo(post.media), 'embedUrl')"
-                class="moment-video"
+              class="moment-video"
             >
               <video
                 v-if="readMediaString(getMomentVideo(post.media), 'videoUrl')"
@@ -166,14 +157,12 @@ function formatDate(value?: string | null) {
                 allowfullscreen
               />
             </div>
+          </div>
+        </article>
+      </div>
 
-            </div>
-          </article>
-        </div>
-
-        <p v-else class="moment-empty">还没有发布动态</p>
-      </section>
-    </WorkbenchWindow>
+      <p v-else class="moment-empty">还没有发布动态</p>
+    </section>
   </main>
 </template>
 
@@ -183,61 +172,28 @@ function formatDate(value?: string | null) {
   max-width: none;
 }
 
-.moments-window :deep(.window-content) {
-  padding: 18px 22px 24px;
-}
-
-.moment-index {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 2px 0 15px;
-  border-bottom: 1px dashed rgba(11, 15, 19, 0.1);
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-.moment-index > div {
+.moment-list {
   display: grid;
-  gap: 3px;
-}
-
-.moment-index span {
-  color: #4d9a75;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-}
-
-.moment-index strong {
-  color: #45515a;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.moment-index small {
-  color: #939ca2;
-  font-size: 8px;
-  white-space: nowrap;
+  gap: 0;
 }
 
 .moment-entry {
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr);
   gap: 11px;
-  padding: 17px 0 18px;
+  padding: 0 0 22px;
 }
 
 .moment-entry + .moment-entry {
-  border-top: 1px dashed rgba(11, 15, 19, 0.075);
+  padding-top: 22px;
+  border-top: 1px dashed color-mix(in oklch, var(--text) 10%, transparent);
 }
 
 .moment-avatar {
   display: block;
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(11, 15, 19, 0.06);
+  border: 1px solid color-mix(in oklch, var(--text) 8%, transparent);
   border-radius: 6px;
   object-fit: cover;
 }
@@ -256,7 +212,7 @@ function formatDate(value?: string | null) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #47535b;
+  color: var(--text);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -266,19 +222,19 @@ function formatDate(value?: string | null) {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #4d9a75;
-  box-shadow: 0 0 0 3px rgba(77, 154, 117, 0.08);
+  background: color-mix(in oklch, var(--text) 58%, var(--page-bg));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--text) 8%, transparent);
   content: '';
 }
 
 .moment-author time {
-  color: #9aa2a8;
+  color: var(--text-muted);
   font-size: 8px;
 }
 
 .moment-copy {
   margin: 5px 0 0;
-  color: #38434b;
+  color: color-mix(in oklch, var(--text) 86%, var(--page-bg));
   font-size: 13.5px;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -313,7 +269,7 @@ function formatDate(value?: string | null) {
   padding: 0;
   border: 0;
   border-radius: 4px;
-  background: #eef1f3;
+  background: color-mix(in oklch, var(--page-bg) 80%, var(--text) 7%);
   cursor: zoom-in;
 }
 
@@ -348,12 +304,11 @@ function formatDate(value?: string | null) {
 .moment-video iframe { display: block; width: 100%; height: 100%; border: 0; }
 .moment-video video { object-fit: cover; }
 
-.moment-empty { margin: 0; padding: 70px 0; color: #929ba1; font-size: 12px; text-align: center; }
+.moment-empty { margin: 0; padding: 70px 0; color: var(--text-muted); font-size: 12px; text-align: center; }
 
 @media (max-width: 560px) {
-  .moments-window :deep(.window-content) { padding: 14px 13px 20px; }
-  .moment-index { padding-bottom: 13px; }
-  .moment-entry { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; padding: 15px 0; }
+  .moment-entry { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; padding-bottom: 18px; }
+  .moment-entry + .moment-entry { padding-top: 18px; }
   .moment-avatar { width: 28px; height: 28px; border-radius: 5px; }
   .moment-copy { font-size: 13px; }
   .moment-photos { max-width: 272px; }

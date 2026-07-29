@@ -18,8 +18,8 @@ defineProps<{
   --rich-code-bg: color-mix(in oklch, var(--page-bg) 80%, var(--text) 7%);
   --rich-accent: oklch(52% .07 150);
   color: var(--rich-ink);
-  font-size: 15px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.82;
   text-rendering: optimizeLegibility;
 }
 
@@ -40,37 +40,27 @@ defineProps<{
 }
 
 .detail-rich-content :deep(h2) {
-  margin: 42px 0 15px;
-  padding-top: 6px;
-  font-size: 24px;
-  font-weight: 720;
-  letter-spacing: -.035em;
-}
-
-.detail-rich-content :deep(h2::before) {
-  display: inline-block;
-  width: 24px;
-  color: var(--rich-accent);
-  content: '§';
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
-  font-weight: 700;
+  margin: 34px 0 12px;
+  padding-top: 4px;
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -.01em;
 }
 
 .detail-rich-content :deep(h3) {
-  margin: 30px 0 12px;
-  font-size: 18px;
-  font-weight: 680;
+  margin: 26px 0 10px;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .detail-rich-content :deep(h4) {
-  margin: 24px 0 10px;
-  font-size: 15px;
-  font-weight: 680;
+  margin: 22px 0 8px;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .detail-rich-content :deep(p) {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 
 .detail-rich-content :deep(strong) {
@@ -108,15 +98,15 @@ defineProps<{
 .detail-rich-content :deep(img) {
   max-width: 100%;
   height: auto;
-  margin: 28px 0;
-  border-radius: 12px;
+  margin: 26px 0;
+  border-radius: 8px;
   cursor: zoom-in;
 }
 
 .detail-rich-content :deep(blockquote) {
   margin: 24px 0;
   padding: 2px 0 2px 18px;
-  border-left: 2px solid var(--rich-accent);
+  border-left: 3px solid var(--rich-line);
   color: var(--rich-muted);
 }
 
@@ -135,13 +125,13 @@ defineProps<{
 
 .detail-rich-content :deep(pre) {
   overflow-x: auto;
-  margin: 24px 0;
-  padding: 16px 17px;
+  margin: 20px 0;
+  padding: 14px 15px;
   border: 1px solid var(--rich-line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: oklch(18% .014 245);
   color: #e7ecec;
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.72;
 }
 

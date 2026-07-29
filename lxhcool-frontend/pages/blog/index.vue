@@ -38,26 +38,28 @@ function articleMeta(post: Post) {
 
 <template>
   <main>
-    <WorkbenchWindow path="~/articles" :status="`${posts.length} files`">
-      <div v-if="posts.length" class="article-archive">
+    <div class="article-page">
+      <div v-if="posts.length" class="article-archive" aria-label="文章列表">
         <section v-for="group in articleGroups" :key="group.year" class="year-group">
           <header class="year-heading">
             <strong>{{ group.year }}</strong>
             <span>{{ group.articles.length }} 篇</span>
           </header>
 
-          <NuxtLink
-            v-for="post in group.articles"
-            :key="post.id"
-            :to="`/blog/${post.slug}`"
-            class="article-row"
-          >
-            <span class="article-copy">
-              <strong>{{ post.title }}</strong>
-              <small>{{ articleMeta(post) }}</small>
-            </span>
-            <time :datetime="post.publishedAt || post.createdAt">{{ formatShortDate(post.publishedAt || post.createdAt) }}</time>
-          </NuxtLink>
+          <div class="article-list">
+            <NuxtLink
+              v-for="post in group.articles"
+              :key="post.id"
+              :to="`/blog/${post.slug}`"
+              class="article-row"
+            >
+              <time :datetime="post.publishedAt || post.createdAt">{{ formatShortDate(post.publishedAt || post.createdAt) }}</time>
+              <span class="article-copy">
+                <strong>{{ post.title }}</strong>
+                <small>{{ articleMeta(post) }}</small>
+              </span>
+            </NuxtLink>
+          </div>
         </section>
       </div>
 
@@ -65,27 +67,163 @@ function articleMeta(post: Post) {
         <span>0 articles</span>
         <p>还没有已发布的文章。</p>
       </div>
-    </WorkbenchWindow>
+    </div>
   </main>
 </template>
 
 <style scoped>
-.article-archive { display: grid; gap: 27px; }
-.year-heading { display: flex; align-items: baseline; justify-content: space-between; min-height: 27px; border-bottom: 1px solid rgba(89,78,62,.18); font-family: 'IBM Plex Mono', monospace; }
-.year-heading strong { color: #47535a; font-size: 11px; }
-.year-heading span { color: #92999d; font-size: 8px; }
-.article-row { display: grid; grid-template-columns: minmax(0,1fr) 48px; gap: 18px; align-items: center; min-height: 58px; padding: 7px 8px; border-bottom: 1px dashed rgba(89,78,62,.13); transition: background 130ms ease; }
-.article-row:hover { border-radius: 4px; background: rgba(235,228,215,.22); }
-.article-copy { display: grid; gap: 5px; min-width: 0; }
-.article-copy strong { overflow: hidden; color: #3f4b52; font-size: 14px; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
-.article-copy small { color: #818a90; font-family: 'IBM Plex Mono', monospace; font-size: 8px; }
-.article-row time { color: #879095; font-family: 'IBM Plex Mono', monospace; font-size: 8px; text-align: right; }
-.archive-empty { padding: 72px 20px; color: #7f888f; text-align: center; }
-.archive-empty span { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
-.archive-empty p { font-size: 12px; }
+.article-page {
+  width: 100%;
+}
+
+.article-archive {
+  display: grid;
+  gap: 46px;
+}
+
+.year-group {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+}
+
+.year-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.year-heading strong {
+  color: color-mix(in oklch, var(--text) 34%, transparent);
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: -.08em;
+  line-height: .86;
+}
+
+.year-heading span {
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+
+.article-list {
+  display: grid;
+  gap: 8px;
+}
+
+.article-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: transparent;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.article-row:hover {
+  background: color-mix(in oklch, var(--page-bg) 74%, var(--text) 5%);
+  transform: translateX(2px);
+}
+
+.article-row time {
+  order: 2;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.article-copy {
+  order: 1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.article-copy strong {
+  overflow: hidden;
+  color: color-mix(in oklch, var(--text) 88%, var(--page-bg));
+  font-size: 14px;
+  font-weight: 520;
+  letter-spacing: -.01em;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 140ms ease;
+}
+
+.article-row:hover .article-copy strong {
+  color: var(--text);
+}
+
+.article-copy small {
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.archive-empty {
+  padding: 72px 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.archive-empty span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+}
+
+.archive-empty p {
+  font-size: 12px;
+}
+
 @media (max-width: 560px) {
-  .article-archive { gap: 22px; }
-  .article-row { min-height: 54px; padding-inline: 4px; }
-  .article-copy strong { font-size: 13px; }
+  .article-archive {
+    gap: 38px;
+  }
+
+  .year-group {
+    gap: 10px;
+  }
+
+  .year-heading {
+    align-items: flex-end;
+  }
+
+  .year-heading strong {
+    font-size: 34px;
+  }
+
+  .article-row {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    min-height: 0;
+    padding: 9px 0;
+    border-radius: 0;
+  }
+
+  .article-row:hover {
+    background: transparent;
+    transform: none;
+  }
+
+  .article-row time {
+    order: 1;
+  }
+
+  .article-copy {
+    order: 2;
+  }
+
+  .article-copy strong {
+    font-size: 13px;
+  }
 }
 </style>
